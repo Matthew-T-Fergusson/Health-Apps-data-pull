@@ -5,8 +5,9 @@ from pathlib import Path
 import psycopg2
 from psycopg2.extras import Json
 
-ENV_PATH = "/home/matt69/.openclaw/.env"
-SQL_PATH = "/home/matt69/.openclaw/workspace/sql/health_activity_routes.sql"
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
+SQL_PATH = os.getenv("HEALTH_ACTIVITY_ROUTES_SQL", str(WORKSPACE_DIR / "sql" / "health_activity_routes.sql"))
 
 
 def load_env(path):

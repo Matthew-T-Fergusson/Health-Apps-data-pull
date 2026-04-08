@@ -1,4 +1,4 @@
-# Athlete Ingest (Garmin + Strava)
+# Health Apps Data Pull (Garmin + Strava)
 
 Production-oriented ingestion pipeline for Garmin and Strava health/activity data into a private PostgreSQL store.
 
@@ -18,7 +18,7 @@ See:
 
 ## Quickstart
 1. Create virtualenv and install deps.
-2. Copy `.env.example` to `.env` and set credentials.
+2. Copy `.env.example` to `.env` in repo root and set credentials.
 3. Bootstrap + migrate DB schema:
    - `python3 scripts/db_cli.py bootstrap`
    - `python3 scripts/db_cli.py migrate`

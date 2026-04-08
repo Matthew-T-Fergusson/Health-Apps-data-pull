@@ -8,10 +8,11 @@ import psycopg2
 from psycopg2.extras import Json
 from garminconnect import Garmin
 
-ENV_PATH = "/home/matt69/.openclaw/.env"
-DEFAULT_TOKENSTORE = "/home/matt69/.openclaw/workspace/output/garmin/tokenstore"
-SQL_PATH = "/home/matt69/.openclaw/workspace/sql/health_activity_detail_tables.sql"
-ENRICH_SQL_PATH = "/home/matt69/.openclaw/workspace/sql/health_garmin_enrichment_tables.sql"
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
+DEFAULT_TOKENSTORE = os.getenv("GARMIN_TOKENSTORE", str(WORKSPACE_DIR / "output" / "garmin" / "tokenstore"))
+SQL_PATH = os.getenv("HEALTH_ACTIVITY_DETAIL_SQL", str(WORKSPACE_DIR / "sql" / "health_activity_detail_tables.sql"))
+ENRICH_SQL_PATH = os.getenv("HEALTH_GARMIN_ENRICH_SQL", str(WORKSPACE_DIR / "sql" / "health_garmin_enrichment_tables.sql"))
 
 
 def load_env(path):

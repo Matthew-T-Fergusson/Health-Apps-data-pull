@@ -7,7 +7,8 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import Json
 
-ENV_PATH = "/home/matt69/.openclaw/.env"
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 
 
 def load_env(path):
@@ -170,7 +171,7 @@ def main():
         "issues": issues,
     }
 
-    out_path = Path("/home/matt69/.openclaw/workspace/output/health_qa_daily_latest.json")
+    out_path = Path(os.getenv("HEALTH_QA_OUTPUT_PATH", str(WORKSPACE_DIR / "output" / "health_qa_daily_latest.json")))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2))
 
