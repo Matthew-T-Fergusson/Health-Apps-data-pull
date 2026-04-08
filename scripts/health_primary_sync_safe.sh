@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Wrapper entrypoint used by cron and operators.
-#
-# Design rationale:
-# - Keep one stable command for scheduled runs (reduces scheduler drift/misconfig).
-# - Force orchestrator execution via repo-local virtualenv for reproducibility.
-# - Route all primary domains through a single safety-hardened path.
+# Decision log (why this wrapper exists)
+# - Decision: expose one stable command for cron + operators.
+#   Why: prevents scheduler drift and command mismatch across environments.
+# - Decision: execute via repo-local virtualenv.
+#   Why: reproducible dependency/runtime behavior.
+# - Decision: always route through orchestrator.
+#   Why: preserves safety controls, lockout handling, and consistent artifacts.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Minimal reproducible setup helper.
-#
-# Design rationale:
-# - New contributors/operators should reach a runnable state quickly.
-# - Keeps setup deterministic (local venv + requirements) before env/credential wiring.
+# Decision log (why this bootstrap exists)
+# - Decision: one quick setup path (venv + requirements).
+#   Why: reduce onboarding friction and setup variance.
+# - Decision: keep credential wiring separate from package install.
+#   Why: safer defaults for public repo usage and sharing.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

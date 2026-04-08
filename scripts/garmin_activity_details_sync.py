@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Garmin activity-details enrichment worker.
-
-Design rationale:
-- Raw activity ingest and detail enrichment are separated so baseline ingest can keep flowing even if detail endpoints are noisy.
-- We persist enriched subdomains (laps, typed splits, weather, zones, training metrics) into normalized tables for analytics.
-- Mixed ID handling is intentional: Garmin may emit numeric and manual/non-numeric activity IDs.
-- Per-activity SAVEPOINT/ROLLBACK protects the run from one malformed record aborting the whole transaction.
+Decision log (why this script is designed this way)
+- Decision: Keep raw activity ingest separate from detail enrichment.
+  Why: Base ingest can keep flowing even if detail endpoints are flaky/noisy.
+- Decision: Normalize enrichment into dedicated tables (laps/splits/weather/zones/training).
+  Why: Better analytics performance and cleaner downstream models than parsing nested JSON repeatedly.
+- Decision: Support mixed Garmin activity ID types (numeric + manual text IDs).
+  Why: Real data includes both, and strict bigint assumptions caused production failures.
+- Decision: Use per-activity SAVEPOINT rollback.
+  Why: One bad activity should not abort the entire transaction/run.
 """
 import os
 import json
