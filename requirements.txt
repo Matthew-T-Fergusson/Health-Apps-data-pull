@@ -1,0 +1,5 @@
+requests
+psycopg2-binary
+garminconnect>=0.3.0,<0.4
+curl_cffi
+ua-generator

@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+"""
+Builds route geometry records from provider-specific raw activity feeds.
+
+Why we keep provider raw tables separate first:
+- Garmin and Strava use different identifiers and payload shapes.
+- Some Garmin activities can be manual/non-numeric IDs; Strava IDs are numeric but separate namespace.
+- Keeping raw sources isolated prevents accidental overwrite/collision during ingest.
+
+Why this script exists:
+- Create a normalized route layer (`health.activity_routes`) from both raw feeds.
+- Preserve source attribution for traceability/debugging.
+- Prepare clean geometry inputs for dedupe/matching logic downstream.
+
+Dedupe strategy note:
+- We do not force cross-provider merge here.
+- This step is source-preserving by design; cross-source matching/deduping is handled later
+  so we keep reversible lineage and avoid destructive assumptions.
+"""
 import json
 import os
 from pathlib import Path
