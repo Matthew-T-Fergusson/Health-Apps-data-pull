@@ -33,7 +33,20 @@ scripts/health_primary_sync_safe.sh
 python3 scripts/health_qa_daily.py
 ```
 
-## 6) Key artifacts to inspect
+## 6) Manual activity capture (watch-miss fallback)
+```bash
+python3 scripts/manual_activity_capture.py \
+  --start "2026-04-08T15:00:00-04:00" \
+  --activity-type treadmill_manual \
+  --duration-min 32 \
+  --distance-mi 2.1 \
+  --calories 280 \
+  --notes "Captured from screenshot"
+```
+- Writes `health.activities_manual_raw`
+- Attempts optional auto-link into `health.activity_manual_links` to prevent duplicate counting
+
+## 7) Key artifacts to inspect
 - `output/garmin_primary_ingest_orchestrator_last_run.json`
 - `output/health_primary_sync_last_run.json`
 - `output/health_qa_daily_latest.json`

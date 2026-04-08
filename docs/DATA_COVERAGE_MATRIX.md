@@ -12,5 +12,7 @@
 | Weather overlays | Garmin | `health.activity_weather_garmin` | Active |
 | HR/Power zones | Garmin | `health.activity_zone_facts_garmin` | Active |
 | Route geometry | Garmin/Strava | `health.activity_routes`, `health.activity_routes_deduped` | Active |
+| Manual activity fallback | Chat/Screenshot | `health.activities_manual_raw`, `health.activity_manual_links` | Active |
+| Unified manual-inclusive view | Multi-source | `health.activities_unified_with_manual` | Active |
 
 > Note: Coverage reflects current implemented pipeline and may not include every provider field.

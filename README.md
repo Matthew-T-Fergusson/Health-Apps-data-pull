@@ -33,6 +33,7 @@ See:
 ## Architecture (high level)
 - Orchestrator: `scripts/garmin_primary_ingest_orchestrator.py`
 - Source workers: `scripts/garmin_*_sync.py`, `scripts/strava_daily_sync.py`
+- Manual capture worker: `scripts/manual_activity_capture.py`
 - QA: `scripts/health_qa_daily.py`
 - SQL schema: `sql/*.sql`
 
@@ -54,6 +55,21 @@ Garmin access uses community libraries against Garmin Connect endpoints (not a p
 - `docs/SECURITY.md`
 - `docs/SUPPORT_SCOPE.md`
 - `docs/KNOWN_LIMITATIONS.md`
+
+## Manual activity capture (screenshot/chat fallback)
+When a workout is not recorded by watch sync, capture it manually:
+
+```bash
+python3 scripts/manual_activity_capture.py \
+  --start "2026-04-08T15:00:00-04:00" \
+  --activity-type treadmill_manual \
+  --duration-min 32 \
+  --distance-mi 2.1 \
+  --calories 280 \
+  --notes "Captured from screenshot"
+```
+
+This stores to `health.activities_manual_raw` and optionally auto-links to Garmin/Strava rows to avoid double-counting.
 
 ## Latest progress report
 - `docs/reports/health-sync-progress-2026-04-08.md`
