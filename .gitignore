@@ -1,0 +1,49 @@
+# Secrets / env
+.env
+.env.*
+!.env.example
+.secrets/
+
+# Tokens / auth caches
+output/garmin/tokenstore/
+**/garmin_tokens.json
+
+# Runtime output + logs
+output/
+logs/
+*.log
+run.lock
+run_state.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+.venv*/
+venv/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Sensitive key material
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Temp artifacts
+tmp/
+*.tmp
+*.bak
