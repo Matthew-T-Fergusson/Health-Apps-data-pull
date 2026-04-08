@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""
+Health pipeline QA/status evaluator.
+
+Design rationale:
+- Convert raw sync timestamps + integrity checks into a single machine-readable health decision (ok/warn/fail).
+- Use stale thresholds (warn/fail hours) so operations can tune sensitivity without changing code.
+- Persist QA output both as file artifact and sync_state row for easy cron + dashboard consumption.
+- Exit non-zero only on fail to keep scheduler alerting actionable.
+"""
 import os
 import json
 from pathlib import Path

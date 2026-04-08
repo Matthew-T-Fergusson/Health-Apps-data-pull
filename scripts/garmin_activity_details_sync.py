@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""
+Garmin activity-details enrichment worker.
+
+Design rationale:
+- Raw activity ingest and detail enrichment are separated so baseline ingest can keep flowing even if detail endpoints are noisy.
+- We persist enriched subdomains (laps, typed splits, weather, zones, training metrics) into normalized tables for analytics.
+- Mixed ID handling is intentional: Garmin may emit numeric and manual/non-numeric activity IDs.
+- Per-activity SAVEPOINT/ROLLBACK protects the run from one malformed record aborting the whole transaction.
+"""
 import os
 import json
 from pathlib import Path

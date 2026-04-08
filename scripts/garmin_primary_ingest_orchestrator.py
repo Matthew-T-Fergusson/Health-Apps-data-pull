@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""
+Primary ingest orchestrator for Garmin + Strava + QA.
+
+Design rationale:
+- Run all ingestion domains in one controlled sequence so we get one operational truth per run.
+- Keep explicit step-level status artifacts for auditability and cron reporting.
+- Use Garmin lockout/cooldown circuit-breaker behavior to avoid repeated auth hammering after 429s.
+- Continue running QA even when Garmin auth is lockout-skipped, so monitoring still reflects system health.
+- Fail fast on DB preflight to prevent partial writes against broken schema/config.
+"""
 import argparse
 import json
 import os
