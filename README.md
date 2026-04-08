@@ -71,5 +71,23 @@ python3 scripts/manual_activity_capture.py \
 
 This stores to `health.activities_manual_raw` and optionally auto-links to Garmin/Strava rows to avoid double-counting.
 
+## Manual nutrition capture (chat/photo estimates)
+Log meals without relying on rigid app databases:
+
+```bash
+python3 scripts/manual_nutrition_capture.py \
+  --when "2026-04-08T18:30:00-04:00" \
+  --meal-name "Beef bowl" \
+  --meal-type dinner \
+  --items-json '[{"name":"ground beef","qty":10,"unit":"oz","calories":700,"protein_g":55,"fat_g":50},{"name":"rice","qty":1.5,"unit":"cup","calories":300,"carbs_g":66,"protein_g":6}]' \
+  --notes "Captured from photo + estimate"
+```
+
+Writes to:
+- `health.nutrition_manual_raw`
+- `health.nutrition_manual_items`
+- `health.nutrition_daily_totals` (view)
+- `health.health_daily_combined` (view)
+
 ## Latest progress report
 - `docs/reports/health-sync-progress-2026-04-08.md`

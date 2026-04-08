@@ -46,7 +46,20 @@ python3 scripts/manual_activity_capture.py \
 - Writes `health.activities_manual_raw`
 - Attempts optional auto-link into `health.activity_manual_links` to prevent duplicate counting
 
-## 7) Key artifacts to inspect
+## 7) Manual nutrition capture (photo/chat estimates)
+```bash
+python3 scripts/manual_nutrition_capture.py \
+  --when "2026-04-08T18:30:00-04:00" \
+  --meal-name "Beef bowl" \
+  --meal-type dinner \
+  --items-json '[{"name":"ground beef","qty":10,"unit":"oz","calories":700,"protein_g":55,"fat_g":50}]' \
+  --notes "Captured from photo + estimate"
+```
+- Writes `health.nutrition_manual_raw` + `health.nutrition_manual_items`
+- Rolls up to `health.nutrition_daily_totals`
+- Appears in `health.health_daily_combined` when the day exists in `health.daily_metrics`
+
+## 8) Key artifacts to inspect
 - `output/garmin_primary_ingest_orchestrator_last_run.json`
 - `output/health_primary_sync_last_run.json`
 - `output/health_qa_daily_latest.json`

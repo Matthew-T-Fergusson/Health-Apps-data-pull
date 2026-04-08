@@ -14,5 +14,7 @@
 | Route geometry | Garmin/Strava | `health.activity_routes`, `health.activity_routes_deduped` | Active |
 | Manual activity fallback | Chat/Screenshot | `health.activities_manual_raw`, `health.activity_manual_links` | Active |
 | Unified manual-inclusive view | Multi-source | `health.activities_unified_with_manual` | Active |
+| Manual nutrition intake | Chat/Screenshot | `health.nutrition_manual_raw`, `health.nutrition_manual_items` | Active |
+| Nutrition daily rollup | Multi-source | `health.nutrition_daily_totals`, `health.health_daily_combined` | Active |
 
 > Note: Coverage reflects current implemented pipeline and may not include every provider field.

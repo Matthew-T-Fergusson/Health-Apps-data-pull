@@ -13,6 +13,11 @@ All notable changes to this project will be documented in this file.
   - `sql/health_manual_activity_tables.sql`
   - `health.activities_manual_raw` + `health.activity_manual_links`
   - `health.activities_unified_with_manual` view
+- Manual nutrition pipeline:
+  - `scripts/manual_nutrition_capture.py`
+  - `sql/health_manual_nutrition_tables.sql`
+  - `health.nutrition_manual_raw` + `health.nutrition_manual_items`
+  - `health.nutrition_daily_totals` + `health.health_daily_combined` views
 
 ### Changed
 - Path handling made portable (repo-relative/env-driven)
