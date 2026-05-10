@@ -16,10 +16,13 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 import uuid
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from common_env import load_env
 from typing import Optional
 
 from garminconnect import Garmin
@@ -32,14 +35,6 @@ def _utc_now() -> datetime:
 def _iso(dt: Optional[datetime] = None) -> str:
     return (dt or _utc_now()).isoformat()
 
-
-def _load_env(path: Path) -> None:
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        if '=' in line and not line.strip().startswith('#'):
-            k, v = line.split('=', 1)
-            os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def _is_rl(msg: str) -> bool:
@@ -72,12 +67,13 @@ def main() -> int:
     args = ap.parse_args()
 
     workspace = Path(args.workspace).resolve()
-    env_file = Path(args.env_file).resolve() if args.env_file else (workspace.parent / '.env')
-    _load_env(env_file)
+    env_file = Path(args.env_file).resolve() if args.env_file else (workspace / '.env')
+    load_env(env_file)
 
     # DB preflight: fail fast with remediation guidance.
     db_cli = workspace / 'scripts' / 'db_cli.py'
-    pre = subprocess.run([str(workspace / '.venv' / 'bin' / 'python3'), str(db_cli), 'validate'], cwd=str(workspace), capture_output=True, text=True)
+    py = os.getenv('PYTHON', sys.executable)
+    pre = subprocess.run([py, str(db_cli), 'validate'], cwd=str(workspace), capture_output=True, text=True)
     if pre.returncode != 0:
         print(pre.stdout.strip())
         if pre.stderr.strip():
@@ -95,7 +91,6 @@ def main() -> int:
     compat_artifact_path = output_dir / 'health_primary_sync_last_run.json'
 
     scripts_dir = workspace / 'scripts'
-    py = str(workspace / '.venv' / 'bin' / 'python3')
 
     steps: list[Step] = []
     auth_429_count = 0

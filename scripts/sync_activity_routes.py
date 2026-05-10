@@ -13,19 +13,14 @@ Decision log (why this script is designed this way)
 import json
 import os
 from pathlib import Path
+
+from common_env import load_env
 import psycopg2
 from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 SQL_PATH = os.getenv("HEALTH_ACTIVITY_ROUTES_SQL", str(WORKSPACE_DIR / "sql" / "health_activity_routes.sql"))
-
-
-def load_env(path):
-    for line in Path(path).read_text().splitlines():
-        if '=' in line and not line.strip().startswith('#'):
-            k, v = line.split('=', 1)
-            os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def decode_polyline(polyline_str):
@@ -210,7 +205,7 @@ def main():
         port=os.getenv('PGPORT', '5432'),
         dbname=os.getenv('PGDATABASE', 'health_ops'),
         user=os.getenv('PGUSER', 'lex'),
-        password=os.getenv('PGPASSWORD', 'lexpass_change_me'),
+        password=os.getenv('PGPASSWORD') or os.getenv('POSTGRES_PASSWORD'),
     )
     conn.autocommit = False
     cur = conn.cursor()

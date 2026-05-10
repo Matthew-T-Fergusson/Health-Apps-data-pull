@@ -14,23 +14,15 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from common_env import load_env
+
 import psycopg2
 from psycopg2.extras import Json
 
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
-ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR.parent / ".env"))
+ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 SQL_PATH = os.getenv("HEALTH_MANUAL_SQL", str(WORKSPACE_DIR / "sql" / "health_manual_activity_tables.sql"))
-
-
-def load_env(path: str):
-    p = Path(path)
-    if not p.exists():
-        return
-    for line in p.read_text().splitlines():
-        if "=" in line and not line.strip().startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def parse_dt(s: str) -> datetime:
@@ -40,13 +32,13 @@ def parse_dt(s: str) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def gen_manual_id(activity_type: str, start_utc: datetime) -> str:
-    stamp = start_utc.strftime("%Y%m%dT%H%M%SZ")
-    return f"manual_{activity_type.lower()}_{stamp}_{uuid.uuid4().hex[:8]}"
-
-
 def normalize_type(t: str) -> str:
     return (t or "manual").strip().lower().replace(" ", "_")
+
+
+def gen_manual_id(activity_type: str, start_utc: datetime) -> str:
+    stamp = start_utc.strftime("%Y%m%dT%H%M%SZ")
+    return f"manual_{normalize_type(activity_type)}_{stamp}_{uuid.uuid4().hex[:8]}"
 
 
 def find_best_link(cur, start_utc: datetime, moving_time_s: int | None, activity_type: str):
@@ -138,7 +130,7 @@ def main():
         port=os.getenv("PGPORT", "5432"),
         dbname=os.getenv("PGDATABASE", "health_ops"),
         user=os.getenv("PGUSER", "lex"),
-        password=os.getenv("PGPASSWORD", "lexpass_change_me"),
+        password=os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
     )
     conn.autocommit = False
     cur = conn.cursor()

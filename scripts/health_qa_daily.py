@@ -13,6 +13,8 @@ Decision log (why this script is designed this way)
 import os
 import json
 from pathlib import Path
+
+from common_env import load_env
 from datetime import datetime, timezone, timedelta
 
 import psycopg2
@@ -20,16 +22,6 @@ from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
-
-
-def load_env(path):
-    p = Path(path)
-    if not p.exists():
-        return
-    for line in p.read_text().splitlines():
-        if "=" in line and not line.strip().startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
 def q1(cur, sql, args=None):
@@ -49,7 +41,7 @@ def main():
         port=os.getenv("PGPORT", "5432"),
         dbname=os.getenv("PGDATABASE", "health_ops"),
         user=os.getenv("PGUSER", "lex"),
-        password=os.getenv("PGPASSWORD", "lexpass_change_me"),
+        password=os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
     )
     conn.autocommit = False
     cur = conn.cursor()

@@ -13,6 +13,8 @@ Decision log (why this script is designed this way)
 import os
 import json
 from pathlib import Path
+
+from common_env import load_env
 from datetime import datetime, timezone, date, timedelta
 
 import psycopg2
@@ -24,13 +26,6 @@ ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 DEFAULT_TOKENSTORE = os.getenv("GARMIN_TOKENSTORE", str(WORKSPACE_DIR / "output" / "garmin" / "tokenstore"))
 SQL_PATH = os.getenv("HEALTH_ACTIVITY_DETAIL_SQL", str(WORKSPACE_DIR / "sql" / "health_activity_detail_tables.sql"))
 ENRICH_SQL_PATH = os.getenv("HEALTH_GARMIN_ENRICH_SQL", str(WORKSPACE_DIR / "sql" / "health_garmin_enrichment_tables.sql"))
-
-
-def load_env(path):
-    for line in Path(path).read_text().splitlines():
-        if "=" in line and not line.strip().startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def parse_ts(s):
@@ -302,7 +297,7 @@ def main():
         port=os.getenv("PGPORT", "5432"),
         dbname=os.getenv("PGDATABASE", "health_ops"),
         user=os.getenv("PGUSER", "lex"),
-        password=os.getenv("PGPASSWORD", "lexpass_change_me"),
+        password=os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
     )
     conn.autocommit = False
     cur = conn.cursor()

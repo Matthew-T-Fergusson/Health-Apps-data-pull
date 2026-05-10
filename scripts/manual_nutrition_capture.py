@@ -14,22 +14,14 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from common_env import load_env
+
 import psycopg2
 from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
-ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR.parent / ".env"))
+ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 SQL_PATH = os.getenv("HEALTH_NUTRITION_SQL", str(WORKSPACE_DIR / "sql" / "health_manual_nutrition_tables.sql"))
-
-
-def load_env(path: str):
-    p = Path(path)
-    if not p.exists():
-        return
-    for line in p.read_text().splitlines():
-        if "=" in line and not line.strip().startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def parse_dt(s: str) -> datetime:
@@ -86,7 +78,7 @@ def main():
         port=os.getenv("PGPORT", "5432"),
         dbname=os.getenv("PGDATABASE", "health_ops"),
         user=os.getenv("PGUSER", "lex"),
-        password=os.getenv("PGPASSWORD", "lexpass_change_me"),
+        password=os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD"),
     )
     conn.autocommit = False
     cur = conn.cursor()

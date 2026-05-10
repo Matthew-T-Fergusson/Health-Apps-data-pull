@@ -90,7 +90,7 @@ Interpretation: system is synced through current run time; provider accounts ret
 No hardcoded runtime credentials were required in code for these fixes.
 
 ### Runtime auth model
-- Credentials are loaded from environment (`~/.openclaw/.env`) at execution time.
+- Credentials are loaded from environment variables or a local `.env` file at execution time.
 - Garmin auth also uses local tokenstore cache under output paths.
 
 ### Publish hygiene requirements before pushing repo

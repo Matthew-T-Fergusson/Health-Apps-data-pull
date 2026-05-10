@@ -1,6 +1,6 @@
 # Health Apps Data Pull (Garmin + Strava)
 
-Production-oriented ingestion pipeline for Garmin and Strava health/activity data into a private PostgreSQL store.
+Personal Garmin and Strava health/activity ingestion pipeline with production-style reliability patterns for a private PostgreSQL store.
 
 ## Goals
 - Private data ownership
@@ -9,7 +9,7 @@ Production-oriented ingestion pipeline for Garmin and Strava health/activity dat
 - Open-source deployability (no hardcoded local secrets)
 
 ## Scope statement
-This project currently provides **core Garmin + Strava ingestion** with production-oriented reliability controls.
+This project currently provides **core Garmin + Strava ingestion** with reliability controls that were added incrementally for a real personal pipeline.
 It should not yet be represented as complete "all datapoints" parity for every source endpoint.
 See:
 - `docs/DATA_COVERAGE_MATRIX.md`
