@@ -317,6 +317,7 @@ def main():
 
     ok = 0
     errors = []
+    critical_missing_dates = []
 
     for i in range(1, days + 1):
         d = (today - timedelta(days=i)).isoformat()
@@ -472,6 +473,18 @@ def main():
                 "reload_result": reload_result,
                 "graphql_fallbacks": gql_fallbacks,
             }
+
+            critical_values = {
+                "resting_hr": stats.get("restingHeartRate"),
+                "hrv_ms": hrv_ms,
+                "stress_avg": stress_avg,
+                "body_battery_avg": body_battery_avg,
+                "steps": stats.get("totalSteps"),
+                "calories_total": stats.get("totalKilocalories"),
+                "sleep_seconds": sleep_seconds,
+            }
+            if all(v is None for v in critical_values.values()):
+                critical_missing_dates.append(d)
 
             # daily_metrics
             cur.execute(
@@ -737,8 +750,14 @@ def main():
         """,
         (
             today.isoformat(),
-            "ok" if not errors else "partial",
-            Json({"days_attempted": days, "days_ok": ok, "errors": errors[:20]}),
+            "fail" if len(critical_missing_dates) == days else ("partial" if errors or critical_missing_dates else "ok"),
+            Json({
+                "days_attempted": days,
+                "days_ok": ok,
+                "critical_missing_days": len(critical_missing_dates),
+                "critical_missing_dates": critical_missing_dates[:20],
+                "errors": errors[:20],
+            }),
         ),
     )
 
@@ -746,7 +765,18 @@ def main():
     cur.close()
     conn.close()
 
-    print(json.dumps({"ok": True, "days_attempted": days, "days_ok": ok, "errors": errors}, indent=2))
+    result_status = "fail" if len(critical_missing_dates) == days else ("partial" if errors or critical_missing_dates else "ok")
+    print(json.dumps({
+        "ok": result_status == "ok",
+        "status": result_status,
+        "days_attempted": days,
+        "days_ok": ok,
+        "critical_missing_days": len(critical_missing_dates),
+        "critical_missing_dates": critical_missing_dates,
+        "errors": errors,
+    }, indent=2))
+    if result_status == "fail":
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

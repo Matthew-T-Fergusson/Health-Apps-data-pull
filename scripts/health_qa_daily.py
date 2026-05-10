@@ -146,6 +146,81 @@ def main():
     if nulls["body_battery_null_rate_30d"] > 0.1:
         issues.append({"severity": "warn", "type": "null_rate", "metric": "body_battery", "value": nulls["body_battery_null_rate_30d"]})
 
+    # Critical recent completeness checks (last completed days)
+    critical = {}
+    critical_lookback_days = int(os.getenv("HEALTH_QA_CRITICAL_LOOKBACK_DAYS", "7"))
+    critical_start_expr = f"{critical_lookback_days} day"
+    cur.execute(
+        """
+        with days as (
+          select generate_series(
+            current_date - (%s::text)::interval,
+            current_date - interval '1 day',
+            interval '1 day'
+          )::date as metric_date
+        ), rows as (
+          select d.metric_date,
+                 g.resting_hr, g.hrv_ms, g.stress_avg, g.body_battery_avg,
+                 g.steps, g.sleep_seconds,
+                 (g.raw_json #>> '{_garmin_sources,stats_empty_wellness_payload}')::boolean as source_empty
+          from days d
+          left join health.daily_metrics g
+            on g.source='garmin' and g.metric_date=d.metric_date
+        )
+        select count(*) as expected_days,
+               count(*) filter (where steps is not null) as steps_days,
+               count(*) filter (where sleep_seconds is not null) as sleep_days,
+               count(*) filter (where resting_hr is not null) as resting_hr_days,
+               count(*) filter (where hrv_ms is not null) as hrv_days,
+               count(*) filter (where stress_avg is not null) as stress_days,
+               count(*) filter (where body_battery_avg is not null) as body_battery_days,
+               count(*) filter (
+                 where resting_hr is null and hrv_ms is null and stress_avg is null
+                   and body_battery_avg is null and steps is null and sleep_seconds is null
+               ) as all_critical_missing_days,
+               coalesce(jsonb_agg(metric_date order by metric_date) filter (
+                 where resting_hr is null and hrv_ms is null and stress_avg is null
+                   and body_battery_avg is null and steps is null and sleep_seconds is null
+               ), '[]'::jsonb) as all_critical_missing_dates,
+               count(*) filter (where source_empty is true) as source_empty_days
+        from rows
+        """,
+        (critical_start_expr,),
+    )
+    (
+        expected_days,
+        steps_days,
+        sleep_days,
+        resting_hr_days,
+        hrv_days,
+        stress_days,
+        body_battery_days,
+        all_missing_days,
+        all_missing_dates,
+        source_empty_days,
+    ) = cur.fetchone()
+    critical = {
+        "lookback_completed_days": int(expected_days or 0),
+        "steps_days": int(steps_days or 0),
+        "sleep_days": int(sleep_days or 0),
+        "resting_hr_days": int(resting_hr_days or 0),
+        "hrv_days": int(hrv_days or 0),
+        "stress_days": int(stress_days or 0),
+        "body_battery_days": int(body_battery_days or 0),
+        "all_critical_missing_days": int(all_missing_days or 0),
+        "all_critical_missing_dates": [str(d) for d in (all_missing_dates or [])],
+        "garmin_source_empty_days": int(source_empty_days or 0),
+    }
+    if critical["all_critical_missing_days"] > 0:
+        issues.append({
+            "severity": "fail",
+            "type": "critical_metrics_missing",
+            "metric": "daily_wellness_core",
+            "days": critical["all_critical_missing_days"],
+            "dates": critical["all_critical_missing_dates"],
+            "note": "Sync freshness alone is insufficient: recent completed days have no steps/sleep/resting_hr/hrv/stress/body_battery values.",
+        })
+
     # Match integrity
     match_stats = {}
     match_stats["matches_30d"] = q1(
@@ -170,6 +245,7 @@ def main():
         "freshness": freshness,
         "coverage": coverage,
         "null_rates": nulls,
+        "critical_completeness": critical,
         "match_stats": match_stats,
         "issues": issues,
     }
