@@ -128,16 +128,29 @@ def main():
         select count(*) as n,
                sum((hrv_ms is null)::int),
                sum((stress_avg is null)::int),
-               sum((body_battery_avg is null)::int)
+               sum((body_battery_avg is null)::int),
+               sum(((raw_json #>> '{_garmin_sources,stats_empty_wellness_payload}')::boolean is true)::int),
+               sum(((raw_json #>> '{_garmin_sources,reload_requested}')::boolean is true)::int)
         from health.daily_metrics
         where source='garmin' and metric_date >= current_date - interval '30 day'
         """
     )
-    n, n_hrv, n_stress, n_bb = cur.fetchone()
+    n, n_hrv, n_stress, n_bb, n_source_empty, n_reload_requested = cur.fetchone()
     n = n or 1
     nulls["hrv_null_rate_30d"] = round((n_hrv or 0) / n, 3)
     nulls["stress_null_rate_30d"] = round((n_stress or 0) / n, 3)
     nulls["body_battery_null_rate_30d"] = round((n_bb or 0) / n, 3)
+    nulls["garmin_source_empty_days_30d"] = int(n_source_empty or 0)
+    nulls["garmin_reload_requested_days_30d"] = int(n_reload_requested or 0)
+
+    if nulls["garmin_source_empty_days_30d"]:
+        issues.append({
+            "severity": "warn",
+            "type": "garmin_source_empty",
+            "metric": "wellness_payload",
+            "days_30d": nulls["garmin_source_empty_days_30d"],
+            "note": "Garmin returned placeholder/empty wellness payloads after reload attempts; this is source availability, not a parser crash.",
+        })
 
     if nulls["hrv_null_rate_30d"] > 0.2:
         issues.append({"severity": "warn", "type": "null_rate", "metric": "hrv", "value": nulls["hrv_null_rate_30d"]})

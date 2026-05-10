@@ -22,7 +22,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Path handling made portable (repo-relative/env-driven)
 - Added architecture/scope/coverage/limitations docs
+- Garmin daily QA now reports placeholder/empty Garmin wellness source days and reload attempts separately from parser/runtime failures.
 
 ### Fixed
 - Mixed numeric/text Garmin activity ID handling in detail + route sync
 - Transaction resilience for per-activity failures
+- Garmin daily sync preserves existing non-null wellness values when Garmin temporarily returns all-null placeholder payloads.
