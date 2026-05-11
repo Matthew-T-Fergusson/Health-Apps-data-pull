@@ -80,6 +80,7 @@ flowchart LR
 - Cooldown lockout persistence
 - Structured run artifact output
 - QA still runs when Garmin is lockout-skipped
+- Garmin daily wellness supports explicit `--mode backfill --since YYYY-MM-DD --until YYYY-MM-DD` recovery runs with merge-safe writes, per-date job tracking, and conflict logging.
 
 ## Security
 - No credentials in source code.

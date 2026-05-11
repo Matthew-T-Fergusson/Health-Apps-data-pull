@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import json
 import time
@@ -16,6 +17,264 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 ENRICH_SQL_PATH = os.getenv("HEALTH_GARMIN_ENRICH_SQL", str(WORKSPACE_DIR / "sql" / "health_garmin_enrichment_tables.sql"))
 DEFAULT_TOKENSTORE = os.getenv("GARMIN_TOKENSTORE", str(WORKSPACE_DIR / "output" / "garmin" / "tokenstore"))
+
+DAILY_METRIC_FIELDS = [
+    "resting_hr",
+    "hrv_ms",
+    "stress_avg",
+    "body_battery_avg",
+    "steps",
+    "calories_total",
+    "sleep_seconds",
+]
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Garmin daily wellness sync/backfill")
+    parser.add_argument("--mode", choices=["incremental", "backfill"], default="incremental")
+    parser.add_argument("--since", help="Inclusive backfill start date, YYYY-MM-DD")
+    parser.add_argument("--until", help="Inclusive backfill end date, YYYY-MM-DD")
+    parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=None,
+        help="Delay between dates; backfill defaults to GARMIN_BACKFILL_DELAY_SECONDS or 3 seconds",
+    )
+    parser.add_argument("--max-days", type=int, default=int(os.getenv("GARMIN_BACKFILL_MAX_DAYS", "31")))
+    parser.add_argument(
+        "--resume-job-id",
+        type=int,
+        help="Resume an existing backfill job by retrying dates not already success/skipped",
+    )
+    return parser.parse_args()
+
+
+def _parse_date(value: str, label: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except Exception as exc:
+        raise SystemExit(f"Invalid {label} date {value!r}; expected YYYY-MM-DD") from exc
+
+
+def build_sync_dates(args, today: date) -> list[str]:
+    if args.mode == "incremental":
+        days = int(os.getenv("GARMIN_SYNC_DAYS", "7"))
+        return [(today - timedelta(days=i)).isoformat() for i in range(1, days + 1)]
+
+    if not args.since or not args.until:
+        raise SystemExit("Backfill mode requires --since YYYY-MM-DD and --until YYYY-MM-DD")
+    since = _parse_date(args.since, "--since")
+    until = _parse_date(args.until, "--until")
+    if since > until:
+        raise SystemExit("Backfill --since must be <= --until")
+    if until > today:
+        raise SystemExit("Backfill --until cannot be in the future")
+    total_days = (until - since).days + 1
+    if total_days > args.max_days:
+        raise SystemExit(
+            f"Backfill range has {total_days} days; max is {args.max_days}. "
+            "Raise --max-days intentionally if needed."
+        )
+    return [(since + timedelta(days=i)).isoformat() for i in range(total_days)]
+
+
+def ensure_backfill_tables(cur):
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS health.backfill_jobs (
+          job_id BIGSERIAL PRIMARY KEY,
+          source TEXT NOT NULL,
+          mode TEXT NOT NULL DEFAULT 'backfill',
+          since_date DATE NOT NULL,
+          until_date DATE NOT NULL,
+          status TEXT NOT NULL DEFAULT 'running',
+          write_policy TEXT NOT NULL DEFAULT 'merge_safe',
+          requested_by TEXT,
+          started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          finished_at TIMESTAMPTZ,
+          last_progress_date DATE,
+          dates_total INTEGER NOT NULL DEFAULT 0,
+          dates_succeeded INTEGER NOT NULL DEFAULT 0,
+          dates_empty INTEGER NOT NULL DEFAULT 0,
+          dates_failed INTEGER NOT NULL DEFAULT 0,
+          meta JSONB DEFAULT '{}'::jsonb
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS health.backfill_job_dates (
+          job_id BIGINT NOT NULL REFERENCES health.backfill_jobs(job_id) ON DELETE CASCADE,
+          metric_date DATE NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending',
+          started_at TIMESTAMPTZ,
+          finished_at TIMESTAMPTZ,
+          rows_written INTEGER NOT NULL DEFAULT 0,
+          conflict_count INTEGER NOT NULL DEFAULT 0,
+          error_message TEXT,
+          meta JSONB DEFAULT '{}'::jsonb,
+          PRIMARY KEY (job_id, metric_date)
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS health.backfill_value_conflicts (
+          id BIGSERIAL PRIMARY KEY,
+          job_id BIGINT REFERENCES health.backfill_jobs(job_id) ON DELETE SET NULL,
+          metric_date DATE NOT NULL,
+          table_name TEXT NOT NULL,
+          field_name TEXT NOT NULL,
+          existing_value TEXT,
+          incoming_value TEXT,
+          decision TEXT NOT NULL,
+          reason TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+        """
+    )
+
+
+def start_backfill_job(cur, source: str, dates: list[str], args) -> int | None:
+    if args.mode != "backfill":
+        return None
+    ensure_backfill_tables(cur)
+    cur.execute(
+        """
+        INSERT INTO health.backfill_jobs (
+          source, mode, since_date, until_date, status, write_policy, requested_by, dates_total, meta
+        ) VALUES (%s, 'backfill', %s, %s, 'running', 'merge_safe', %s, %s, %s)
+        RETURNING job_id
+        """,
+        (
+            source,
+            dates[0],
+            dates[-1],
+            os.getenv("BACKFILL_REQUESTED_BY", "cli"),
+            len(dates),
+            Json({"delay_seconds": args.delay_seconds, "max_days": args.max_days}),
+        ),
+    )
+    job_id = cur.fetchone()[0]
+    for metric_date in dates:
+        cur.execute(
+            """
+            INSERT INTO health.backfill_job_dates (job_id, metric_date, status)
+            VALUES (%s, %s, 'pending')
+            ON CONFLICT (job_id, metric_date) DO NOTHING
+            """,
+            (job_id, metric_date),
+        )
+    return job_id
+
+
+def resume_backfill_job(cur, job_id: int) -> list[str]:
+    ensure_backfill_tables(cur)
+    cur.execute("SELECT 1 FROM health.backfill_jobs WHERE job_id=%s", (job_id,))
+    if not cur.fetchone():
+        raise SystemExit(f"No backfill job found for --resume-job-id {job_id}")
+    cur.execute(
+        """
+        SELECT metric_date::text
+        FROM health.backfill_job_dates
+        WHERE job_id=%s AND status NOT IN ('success', 'skipped')
+        ORDER BY metric_date
+        """,
+        (job_id,),
+    )
+    dates = [row[0] for row in cur.fetchall()]
+    cur.execute(
+        """
+        UPDATE health.backfill_jobs
+        SET status='running',
+            finished_at=NULL,
+            meta=COALESCE(meta, '{}'::jsonb) || %s::jsonb
+        WHERE job_id=%s
+        """,
+        (json.dumps({"resumed": True}), job_id),
+    )
+    return dates
+
+
+def mark_backfill_date(cur, job_id, metric_date: str, status: str, *, rows_written=0, conflict_count=0, error_message=None, meta=None):
+    if not job_id:
+        return
+    cur.execute(
+        """
+        UPDATE health.backfill_job_dates
+        SET status=%s,
+            started_at=COALESCE(started_at, now()),
+            finished_at=CASE WHEN %s IN ('success','empty_payload','failed','skipped') THEN now() ELSE finished_at END,
+            rows_written=%s,
+            conflict_count=%s,
+            error_message=%s,
+            meta=%s
+        WHERE job_id=%s AND metric_date=%s
+        """,
+        (status, status, rows_written, conflict_count, error_message, Json(meta or {}), job_id, metric_date),
+    )
+    cur.execute(
+        """
+        UPDATE health.backfill_jobs
+        SET last_progress_date=%s,
+            dates_succeeded=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='success'),
+            dates_empty=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='empty_payload'),
+            dates_failed=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='failed')
+        WHERE job_id=%s
+        """,
+        (metric_date, job_id, job_id, job_id, job_id),
+    )
+
+
+def finish_backfill_job(cur, job_id, status: str, meta: dict):
+    if not job_id:
+        return
+    cur.execute(
+        """
+        UPDATE health.backfill_jobs
+        SET status=%s,
+            finished_at=now(),
+            dates_succeeded=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='success'),
+            dates_empty=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='empty_payload'),
+            dates_failed=(SELECT count(*) FROM health.backfill_job_dates WHERE job_id=%s AND status='failed'),
+            meta=COALESCE(meta, '{}'::jsonb) || %s::jsonb
+        WHERE job_id=%s
+        """,
+        (status, job_id, job_id, job_id, json.dumps(meta), job_id),
+    )
+
+
+def log_daily_metric_conflicts(cur, job_id, metric_date: str, incoming: dict) -> int:
+    if not job_id:
+        return 0
+    cur.execute(
+        """
+        SELECT resting_hr, hrv_ms, stress_avg, body_battery_avg, steps, calories_total, sleep_seconds
+        FROM health.daily_metrics
+        WHERE source='garmin' AND metric_date=%s
+        """,
+        (metric_date,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return 0
+    conflicts = 0
+    existing = dict(zip(DAILY_METRIC_FIELDS, row))
+    for field in DAILY_METRIC_FIELDS:
+        old = existing.get(field)
+        new = incoming.get(field)
+        if old is None or new is None or str(old) == str(new):
+            continue
+        conflicts += 1
+        cur.execute(
+            """
+            INSERT INTO health.backfill_value_conflicts (
+              job_id, metric_date, table_name, field_name, existing_value, incoming_value, decision, reason
+            ) VALUES (%s,%s,'health.daily_metrics',%s,%s,%s,'kept_existing','merge_safe_conflict')
+            """,
+            (job_id, metric_date, field, str(old), str(new)),
+        )
+    return conflicts
 
 
 def dt_from_ms(ms):
@@ -250,6 +509,7 @@ def _extract_body_comp_kg(raw: dict):
 
 
 def main():
+    args = parse_args()
     load_env(ENV_PATH)
 
     email = os.getenv("GARMIN_EMAIL")
@@ -312,16 +572,40 @@ def main():
         g.login()
         g.garth.dump(tokenstore)
 
-    days = int(os.getenv("GARMIN_SYNC_DAYS", "7"))
     today = date.today()
+    sync_dates = build_sync_dates(args, today)
+    if args.resume_job_id and args.mode != "backfill":
+        raise SystemExit("--resume-job-id requires --mode backfill")
+    if args.resume_job_id:
+        backfill_job_id = args.resume_job_id
+        sync_dates = resume_backfill_job(cur, backfill_job_id)
+    else:
+        backfill_job_id = start_backfill_job(cur, "garmin_daily", sync_dates, args)
+    days = len(sync_dates)
+    if backfill_job_id:
+        conn.commit()
+
+    if args.mode == "backfill" and not sync_dates:
+        finish_backfill_job(cur, backfill_job_id, "ok", {"days_attempted": 0, "resume_empty": bool(args.resume_job_id)})
+        conn.commit()
+        cur.close()
+        conn.close()
+        print(json.dumps({"ok": True, "status": "ok", "mode": args.mode, "backfill_job_id": backfill_job_id, "days_attempted": 0}, indent=2))
+        return
+
+    delay_seconds = args.delay_seconds
+    if delay_seconds is None and args.mode == "backfill":
+        delay_seconds = float(os.getenv("GARMIN_BACKFILL_DELAY_SECONDS", "3"))
+    elif delay_seconds is None:
+        delay_seconds = 0
 
     ok = 0
     errors = []
     critical_missing_dates = []
 
-    for i in range(1, days + 1):
-        d = (today - timedelta(days=i)).isoformat()
+    for idx, d in enumerate(sync_dates):
         try:
+            mark_backfill_date(cur, backfill_job_id, d, "running")
             # stats+body is richer and includes weight on many accounts
             stats = g.get_stats_and_body(d) or {}
             sleep = g.get_sleep_data(d) or {}
@@ -483,8 +767,11 @@ def main():
                 "calories_total": stats.get("totalKilocalories"),
                 "sleep_seconds": sleep_seconds,
             }
-            if all(v is None for v in critical_values.values()):
+            empty_payload = all(v is None for v in critical_values.values())
+            if empty_payload:
                 critical_missing_dates.append(d)
+
+            conflict_count = log_daily_metric_conflicts(cur, backfill_job_id, d, critical_values)
 
             # daily_metrics
             cur.execute(
@@ -735,8 +1022,20 @@ def main():
             )
 
             ok += 1
+            mark_backfill_date(
+                cur,
+                backfill_job_id,
+                d,
+                "empty_payload" if empty_payload else "success",
+                rows_written=0 if empty_payload else 1,
+                conflict_count=conflict_count,
+                meta={"write_policy": "merge_safe"},
+            )
+            if delay_seconds and idx < len(sync_dates) - 1:
+                time.sleep(delay_seconds)
         except Exception as e:
             errors.append({"date": d, "error": str(e)})
+            mark_backfill_date(cur, backfill_job_id, d, "failed", error_message=str(e))
 
     cur.execute(
         """
@@ -761,14 +1060,28 @@ def main():
         ),
     )
 
+    result_status = "fail" if len(critical_missing_dates) == days else ("partial" if errors or critical_missing_dates else "ok")
+    finish_backfill_job(
+        cur,
+        backfill_job_id,
+        result_status,
+        {
+            "days_attempted": days,
+            "days_ok": ok,
+            "critical_missing_days": len(critical_missing_dates),
+            "errors_count": len(errors),
+        },
+    )
+
     conn.commit()
     cur.close()
     conn.close()
 
-    result_status = "fail" if len(critical_missing_dates) == days else ("partial" if errors or critical_missing_dates else "ok")
     print(json.dumps({
         "ok": result_status == "ok",
         "status": result_status,
+        "mode": args.mode,
+        "backfill_job_id": backfill_job_id,
         "days_attempted": days,
         "days_ok": ok,
         "critical_missing_days": len(critical_missing_dates),

@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Focused tests for QA critical completeness failure logic.
 - Makefile and `requirements-dev.txt` for repo-local virtualenv setup and consistent local test commands.
 - Isolated Docker Compose/Postgres integration test stack with `.env.test.example`, `make test-integration`, and CI integration job.
+- First-class Garmin daily wellness backfill mode with explicit date ranges, conservative pacing, merge-safe writes, parent/per-date job tracking, and value-conflict logging.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)

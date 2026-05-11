@@ -67,7 +67,62 @@ scripts/health_primary_sync_safe.sh
 .venv/bin/python scripts/health_qa_daily.py
 ```
 
-## 7) Manual activity capture (watch-miss fallback)
+## 7) Garmin daily wellness backfill / outage recovery
+Use first-class backfill mode when Garmin returns empty/placeholder wellness data for completed days, or after an upstream outage.
+
+Example conservative recovery run:
+
+```bash
+.venv/bin/python scripts/garmin_daily_sync.py \
+  --mode backfill \
+  --since 2026-05-01 \
+  --until 2026-05-05 \
+  --delay-seconds 3
+```
+
+Safety behavior:
+- Backfill requires an explicit `--since` and `--until` range.
+- `--until` cannot be in the future.
+- Backfill defaults to max 31 days unless `--max-days` is raised intentionally.
+- Writes use **merge-safe** policy: fill missing values, preserve existing non-null values, and record value conflicts instead of blindly overwriting.
+- Job audit tables:
+  - `health.backfill_jobs` — parent job/status/range/write policy
+  - `health.backfill_job_dates` — one row per attempted date with success/empty/failed status
+- `health.backfill_value_conflicts` — old/new value conflicts and the kept-existing decision
+- Resume behavior: `--resume-job-id <job_id>` retries only dates from that job that are not already `success` or `skipped`.
+
+Inspect recent backfill status:
+
+```sql
+SELECT *
+FROM health.backfill_jobs
+ORDER BY started_at DESC
+LIMIT 5;
+
+SELECT metric_date, status, rows_written, conflict_count, error_message
+FROM health.backfill_job_dates
+WHERE job_id = <job_id>
+ORDER BY metric_date;
+```
+
+Resume a partial job:
+
+```bash
+.venv/bin/python scripts/garmin_daily_sync.py \
+  --mode backfill \
+  --since 2026-05-01 \
+  --until 2026-05-05 \
+  --resume-job-id <job_id> \
+  --delay-seconds 3
+```
+
+Operational playbook for “Garmin was blank for 3 days”:
+1. Confirm failing dates in QA output or `health.daily_metrics`.
+2. Run `garmin_daily_sync.py --mode backfill --since <first_blank_day> --until <last_blank_day> --delay-seconds 3`.
+3. Inspect `health.backfill_job_dates` for `empty_payload` or `failed` dates.
+4. Re-run QA. If values remain missing, treat as upstream/source-data failure rather than job success.
+
+## 8) Manual activity capture (watch-miss fallback)
 ```bash
 .venv/bin/python scripts/manual_activity_capture.py \
   --start "2026-04-08T15:00:00-04:00" \
@@ -80,7 +135,7 @@ scripts/health_primary_sync_safe.sh
 - Writes `health.activities_manual_raw`
 - Attempts optional auto-link into `health.activity_manual_links` to prevent duplicate counting
 
-## 8) Manual nutrition capture (photo/chat estimates)
+## 9) Manual nutrition capture (photo/chat estimates)
 ```bash
 .venv/bin/python scripts/manual_nutrition_capture.py \
   --when "2026-04-08T18:30:00-04:00" \
@@ -93,12 +148,12 @@ scripts/health_primary_sync_safe.sh
 - Rolls up to `health.nutrition_daily_totals`
 - Appears in `health.health_daily_combined` when the day exists in `health.daily_metrics`
 
-## 9) Key artifacts to inspect
+## 10) Key artifacts to inspect
 - `output/garmin_primary_ingest_orchestrator_last_run.json`
 - `output/health_primary_sync_last_run.json`
 - `output/health_qa_daily_latest.json`
 
-## 10) Common failures + fixes
+## 11) Common failures + fixes
 
 ### Garmin rate-limit / lockout
 - Symptom: lockout active or Garmin auth 429
@@ -118,7 +173,7 @@ scripts/health_primary_sync_safe.sh
   2. run one-shot ingest
   3. re-run QA
 
-## 11) Scheduling recommendation
+## 12) Scheduling recommendation
 - Use orchestrator wrapper every 6 hours:
   - `scripts/health_primary_sync_safe.sh`
 - Keep anti-rate-limit cadence; avoid aggressive retries.

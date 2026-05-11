@@ -82,6 +82,58 @@ CREATE TABLE IF NOT EXISTS health.activities (
   UNIQUE(source, external_activity_id)
 );
 
+-- Backfill/recovery audit tables. These intentionally wrap existing fact
+-- tables instead of changing their write shape; legacy rows remain baseline
+-- data and all recovery work is inspectable by job/date/conflict.
+CREATE TABLE IF NOT EXISTS health.backfill_jobs (
+  job_id BIGSERIAL PRIMARY KEY,
+  source TEXT NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'backfill',
+  since_date DATE NOT NULL,
+  until_date DATE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running',
+  write_policy TEXT NOT NULL DEFAULT 'merge_safe',
+  requested_by TEXT,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  finished_at TIMESTAMPTZ,
+  last_progress_date DATE,
+  dates_total INTEGER NOT NULL DEFAULT 0,
+  dates_succeeded INTEGER NOT NULL DEFAULT 0,
+  dates_empty INTEGER NOT NULL DEFAULT 0,
+  dates_failed INTEGER NOT NULL DEFAULT 0,
+  meta JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE IF NOT EXISTS health.backfill_job_dates (
+  job_id BIGINT NOT NULL REFERENCES health.backfill_jobs(job_id) ON DELETE CASCADE,
+  metric_date DATE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  started_at TIMESTAMPTZ,
+  finished_at TIMESTAMPTZ,
+  rows_written INTEGER NOT NULL DEFAULT 0,
+  conflict_count INTEGER NOT NULL DEFAULT 0,
+  error_message TEXT,
+  meta JSONB DEFAULT '{}'::jsonb,
+  PRIMARY KEY (job_id, metric_date)
+);
+
+CREATE TABLE IF NOT EXISTS health.backfill_value_conflicts (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT REFERENCES health.backfill_jobs(job_id) ON DELETE SET NULL,
+  metric_date DATE NOT NULL,
+  table_name TEXT NOT NULL,
+  field_name TEXT NOT NULL,
+  existing_value TEXT,
+  incoming_value TEXT,
+  decision TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_backfill_jobs_source_started ON health.backfill_jobs(source, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backfill_job_dates_status ON health.backfill_job_dates(job_id, status);
+CREATE INDEX IF NOT EXISTS idx_backfill_conflicts_job_date ON health.backfill_value_conflicts(job_id, metric_date);
+
 -- Raw source tables
 CREATE TABLE IF NOT EXISTS health.activities_strava_raw (
   id BIGSERIAL PRIMARY KEY,

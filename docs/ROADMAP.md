@@ -31,7 +31,7 @@ Implemented:
 Known gaps:
 
 - Integration tests are still light; most tests are unit/helper-level today
-- Backfill is currently lookback-window based, not a first-class resumable job system
+- Garmin daily wellness now has first-class date-range backfill with parent/per-date job tracking; other sources still need the same pattern generalized.
 - Metrics are mostly file/QA-artifact based, not yet emitted to a durable metrics table
 - Visualization/dashboard layer is planned but not implemented
 
@@ -50,8 +50,8 @@ Goal: make the repo clean enough for technical friends/reviewers to understand, 
 Goal: demonstrate that the pipeline is implementable against real infrastructure and operable through failures.
 
 - [x] Add Docker Compose + Postgres integration test suite
-- [ ] Add first-class backfill mode with `--since`, `--until`, and `--mode incremental|backfill`
-- [ ] Add `health.backfill_jobs` tracking table
+- [x] Add first-class Garmin daily backfill mode with `--since`, `--until`, and `--mode incremental|backfill`
+- [x] Add `health.backfill_jobs` tracking table plus per-date status and conflict logging
 - [ ] Add durable metrics emission via `health.metrics_log`
 - [ ] Instrument row counts, durations, 429s, and QA status
 
