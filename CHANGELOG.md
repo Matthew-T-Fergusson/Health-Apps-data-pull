@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 - Data quarantine schema and RUNBOOK recovery decision narratives for duplicate activities, malformed Apple Health rows, manual/device conflicts, stale source data, and schema changes.
 - Contributor quickstart polish with `CONTRIBUTING.md` and focused GitHub issue templates.
 - Ruff linting and mypy type-checking with local `make quality` targets and CI enforcement.
+- Friend-handoff first-run walkthrough in `docs/FIRST_RUN.md` covering live Postgres, Garmin/Strava credential choices, first sync, SQL verification, one-off runs, and troubleshooting.
+- Deployment examples in `deploy/` for systemd timers, cron fallback, and log rotation, including simple repo-local vs production-style path tradeoffs.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)

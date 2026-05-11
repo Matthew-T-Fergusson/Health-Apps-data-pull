@@ -63,6 +63,8 @@ make test-db-down
 
 Use `CONTRIBUTING.md` for branch naming, PR expectations, issue template guidance, schema rules, and the short “new data source” checklist.
 
+For a first-time live install against your own Garmin/Strava data, use `docs/FIRST_RUN.md`. It walks through Postgres setup, source credential choices, a small recent-window first sync, SQL verification, and the common auth/env/Postgres failure modes.
+
 ## 4) DB setup/validation
 If your project includes `scripts/db_cli.py`:
 ```bash
@@ -75,6 +77,14 @@ If your project includes `scripts/db_cli.py`:
 ```bash
 scripts/health_primary_sync_safe.sh
 ```
+
+Daily scheduling examples live in `deploy/`:
+
+- `deploy/health-sync.service` + `deploy/health-sync.timer` — recommended long-running Linux/systemd path.
+- `deploy/crontab.example` — simpler cron fallback.
+- `deploy/logrotate.conf.example` — weekly rotation for repo-local logs.
+
+Use daily scheduling for normal operation and manual one-off runs after workouts when immediate data is useful.
 
 ## 6) Run QA only
 ```bash

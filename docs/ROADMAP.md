@@ -36,6 +36,7 @@ Known gaps:
 - Source lineage and consent are now documented through `CONSENT.md` and `health.data_lineage`; destructive source purge remains planned.
 - Data quarantine and recovery decision narratives now document how to choose quarantine vs backfill vs merge vs escalation.
 - Contributor quickstart and focused issue templates make the repo easier for reviewers/friends to run and extend.
+- Friend-handoff docs now include a live first-run walkthrough and daily scheduling examples, with simple repo-local defaults plus production-style alternatives.
 - Visualization/dashboard layer is planned but not implemented
 
 ## Phase 1 — Shareable collaborative WIP

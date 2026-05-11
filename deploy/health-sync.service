@@ -1,0 +1,28 @@
+[Unit]
+Description=Health Apps Data Pull one-shot sync
+Documentation=https://github.com/Matthew-T-Fergusson/Health-Apps-data-pull
+Wants=network-online.target
+After=network-online.target postgresql.service docker.service
+
+[Service]
+Type=oneshot
+# Replace this with the user that owns the checkout and virtualenv.
+User=healthsync
+Group=healthsync
+WorkingDirectory=/opt/health-apps-data-pull
+
+# Friend/default path: repo-local .env. Hardened alternative: /etc/health-sync/health-sync.env.
+Environment=ENV_PATH=/opt/health-apps-data-pull/.env
+# EnvironmentFile=/etc/health-sync/health-sync.env
+
+# Keep state/artifacts repo-local for the simple handoff path.
+ExecStart=/opt/health-apps-data-pull/scripts/health_primary_sync_safe.sh
+
+# Basic hardening that still allows repo-local output/tokenstore writes.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/health-apps-data-pull/output /opt/health-apps-data-pull/logs
+
+[Install]
+WantedBy=multi-user.target

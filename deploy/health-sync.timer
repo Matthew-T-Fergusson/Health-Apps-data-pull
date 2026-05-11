@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Health Apps Data Pull daily
+
+[Timer]
+# Daily at 7:00 AM local server time.
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=health-sync.service
+
+[Install]
+WantedBy=timers.target

@@ -26,10 +26,13 @@ See:
 - `docs/DATA_COVERAGE_MATRIX.md`
 - `docs/KNOWN_LIMITATIONS.md`
 - `docs/SUPPORT_SCOPE.md`
+- `docs/FIRST_RUN.md`
 - `CONTRIBUTING.md`
 
 ## Quickstart
 For contributors, see `CONTRIBUTING.md` for the 15-minute setup path, branch/PR expectations, and issue templates.
+
+For a friend/collaborator setting this up against their own Garmin or Strava account, start with `docs/FIRST_RUN.md`.
 
 1. Create/update the repo-local virtualenv:
    - `make venv`
@@ -49,6 +52,15 @@ For contributors, see `CONTRIBUTING.md` for the 15-minute setup path, branch/PR 
 8. Inspect artifacts:
    - `output/garmin_primary_ingest_orchestrator_last_run.json`
    - `output/health_qa_daily_latest.json`
+
+## Scheduling
+After the first successful manual run, see `deploy/` for daily scheduling examples:
+
+- `deploy/health-sync.service` + `deploy/health-sync.timer` for the recommended systemd path
+- `deploy/crontab.example` for the simpler cron fallback
+- `deploy/logrotate.conf.example` for repo-local log rotation
+
+Daily sync is sufficient for normal use. Run `scripts/health_primary_sync_safe.sh` manually for one-off post-workout pulls.
 
 ## Architecture (high level)
 
