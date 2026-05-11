@@ -18,6 +18,16 @@ All notable changes to this project will be documented in this file.
   - `sql/health_manual_nutrition_tables.sql`
   - `health.nutrition_manual_raw` + `health.nutrition_manual_items`
   - `health.nutrition_daily_totals` + `health.health_daily_combined` views
+- Apple Health export fallback/import helpers:
+  - `scripts/apple_health_phase1_import.py`
+  - `scripts/apple_health_fetch_and_import.sh`
+- Operational helpers that were missing from the published repo:
+  - `scripts/health_pipeline_status.py`
+  - `scripts/garmin_smoke_test.py`
+  - `scripts/rebuild_activity_matches.py`
+  - `scripts/sync_strava_raw_from_core.py`
+  - `sql/health_weight_trend_view.sql`
+- Health ingest and nutrition-imputation docs.
 
 ### Changed
 - Path handling made portable (repo-relative/env-driven)

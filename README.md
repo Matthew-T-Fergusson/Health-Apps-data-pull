@@ -1,6 +1,6 @@
 # Health Apps Data Pull (Garmin + Strava)
 
-Personal Garmin and Strava health/activity ingestion pipeline with production-style reliability patterns for a private PostgreSQL store.
+Personal Garmin, Strava, Apple Health export, manual activity, and manual nutrition ingestion pipeline with production-style reliability patterns for a private PostgreSQL store.
 
 ## Goals
 - Private data ownership
@@ -9,7 +9,7 @@ Personal Garmin and Strava health/activity ingestion pipeline with production-st
 - Open-source deployability (no hardcoded local secrets)
 
 ## Scope statement
-This project currently provides **core Garmin + Strava ingestion** with reliability controls that were added incrementally for a real personal pipeline.
+This project currently provides **core Garmin + Strava ingestion**, Apple Health export import, manual activity/nutrition fallbacks, and reliability controls that were added incrementally for a real personal pipeline.
 It should not yet be represented as complete "all datapoints" parity for every source endpoint.
 See:
 - `docs/DATA_COVERAGE_MATRIX.md`
@@ -32,9 +32,9 @@ See:
 
 ## Architecture (high level)
 - Orchestrator: `scripts/garmin_primary_ingest_orchestrator.py`
-- Source workers: `scripts/garmin_*_sync.py`, `scripts/strava_daily_sync.py`
-- Manual capture worker: `scripts/manual_activity_capture.py`
-- QA: `scripts/health_qa_daily.py`
+- Source workers: `scripts/garmin_*_sync.py`, `scripts/strava_daily_sync.py`, `scripts/apple_health_phase1_import.py`
+- Manual capture workers: `scripts/manual_activity_capture.py`, `scripts/manual_nutrition_capture.py`
+- QA/status: `scripts/health_qa_daily.py`, `scripts/health_pipeline_status.py`
 - SQL schema: `sql/*.sql`
 
 ## Operational behavior
@@ -88,6 +88,19 @@ Writes to:
 - `health.nutrition_manual_items`
 - `health.nutrition_daily_totals` (view)
 - `health.health_daily_combined` (view)
+
+## Apple Health export fallback
+Import a zipped Apple Health export when Garmin/cloud endpoints are incomplete:
+
+```bash
+python3 scripts/apple_health_phase1_import.py --zip data/apple_health/export_iphone_healthdata.zip
+```
+
+Optional Gmail fetch helper, when `gog` is configured locally:
+
+```bash
+scripts/apple_health_fetch_and_import.sh
+```
 
 ## Latest progress report
 - `docs/reports/health-sync-progress-2026-04-08.md`
