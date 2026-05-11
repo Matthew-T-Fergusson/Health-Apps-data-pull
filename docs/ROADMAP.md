@@ -35,6 +35,7 @@ Known gaps:
 - Core operational metrics are now emitted to `health.metrics_log` by the orchestrator, Garmin daily sync, and QA; additional source/AI metrics remain planned.
 - Source lineage and consent are now documented through `CONSENT.md` and `health.data_lineage`; destructive source purge remains planned.
 - Data quarantine and recovery decision narratives now document how to choose quarantine vs backfill vs merge vs escalation.
+- Contributor quickstart and focused issue templates make the repo easier for reviewers/friends to run and extend.
 - Visualization/dashboard layer is planned but not implemented
 
 ## Phase 1 — Shareable collaborative WIP
@@ -58,6 +59,7 @@ Goal: demonstrate that the pipeline is implementable against real infrastructure
 - [x] Instrument initial durations, Garmin 429/lockout, Garmin daily/backfill counts, and QA status
 - [x] Add source lineage + consent framework for responsible-AI auditability
 - [x] Add data quarantine table + recovery decision narratives
+- [x] Add contributor quickstart + dev stack polish
 
 ## Phase 3 — Senior-reviewer hardening
 

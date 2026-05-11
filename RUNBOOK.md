@@ -49,6 +49,20 @@ Safety notes:
 - Tests refuse to run unless `APP_ENV=test`.
 - Tests refuse default/live database settings such as `PGDATABASE=health_ops` or `PGPORT=5432`.
 
+## 3a) Contributor quickstart
+For a first-time contributor/reviewer, the intended path is Docker-first but not Docker-only:
+
+```bash
+make venv
+cp .env.example .env
+cp .env.test.example .env.test
+make test
+make test-integration
+make test-db-down
+```
+
+Use `CONTRIBUTING.md` for branch naming, PR expectations, issue template guidance, schema rules, and the short “new data source” checklist.
+
 ## 4) DB setup/validation
 If your project includes `scripts/db_cli.py`:
 ```bash

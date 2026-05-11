@@ -26,8 +26,11 @@ See:
 - `docs/DATA_COVERAGE_MATRIX.md`
 - `docs/KNOWN_LIMITATIONS.md`
 - `docs/SUPPORT_SCOPE.md`
+- `CONTRIBUTING.md`
 
 ## Quickstart
+For contributors, see `CONTRIBUTING.md` for the 15-minute setup path, branch/PR expectations, and issue templates.
+
 1. Create/update the repo-local virtualenv:
    - `make venv`
 2. Copy `.env.example` to `.env` in repo root and set credentials.
