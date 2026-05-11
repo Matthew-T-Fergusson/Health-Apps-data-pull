@@ -19,6 +19,9 @@ CORE_TABLES = [
     ("health", "backfill_job_dates"),
     ("health", "backfill_value_conflicts"),
     ("health", "metrics_log"),
+    ("health", "apple_health_daily"),
+    ("health", "activities_manual_raw"),
+    ("health", "nutrition_manual_raw"),
     ("health", "activity_routes"),
     ("health", "readiness_daily"),
     ("health", "garmin_exercise_sets_raw"),
@@ -91,6 +94,15 @@ def test_bootstrap_migrate_validate_against_isolated_postgres():
                 (schema, table),
             )
             assert cur.fetchone(), f"missing {schema}.{table}"
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.views
+            WHERE table_schema='health' AND table_name='data_lineage'
+            """
+        )
+        assert cur.fetchone(), "missing health.data_lineage view"
+        cur.execute("SELECT * FROM health.data_lineage LIMIT 0")
 
 
 def test_bootstrap_is_idempotent_against_isolated_postgres():

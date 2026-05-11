@@ -10,6 +10,7 @@ The project is intentionally a work in progress. The aim is to demonstrate how t
 - Raw + curated storage model
 - QA gates based on user-facing data completeness
 - Recovery/backfill workflows for source outages
+- Source lineage and consent metadata for responsible AI auditability
 - Open-source deployability (no hardcoded local secrets)
 - Visualization path that starts streamlined, then iterates toward a fuller data-platform construction
 - Future AI automation layer for status, remediation, and onboarding-style demos
@@ -74,6 +75,7 @@ flowchart LR
 - Manual capture workers: `scripts/manual_activity_capture.py`, `scripts/manual_nutrition_capture.py`
 - QA/status: `scripts/health_qa_daily.py`, `scripts/health_pipeline_status.py`
 - SQL schema: `sql/*.sql`
+- Consent/source lineage: `CONSENT.md`, `health.data_lineage`
 
 ## Operational behavior
 - Circuit breaker on Garmin SSO 429

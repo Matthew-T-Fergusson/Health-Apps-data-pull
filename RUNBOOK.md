@@ -98,6 +98,24 @@ Safety behavior:
 - Metrics use one flexible table: `metric_name`, numeric/text value, source, run_id, status, tags, meta.
 - Metrics write failures warn to stderr and do not break ingestion unless `HEALTH_METRICS_STRICT=1`.
 
+## 6b) Inspect source lineage / consent metadata
+The repo uses consent version `health-consent-2026-05-11` for current source integrations. See `CONSENT.md` for source-by-source scope, disable paths, and purge design.
+
+Inspect recent lineage:
+
+```sql
+SELECT metric_date, source_system, metric_name, metric_value, pulled_at, consent_version, storage_table
+FROM health.data_lineage
+WHERE metric_date >= current_date - interval '7 day'
+ORDER BY metric_date DESC, source_system, metric_name;
+```
+
+Use this view to answer: “Where did this metric come from, when was it pulled, and what consent version applies?”
+
+Revocation vs purge:
+- Revocation = stop future collection from a source by disabling credentials/schedules.
+- Purge = remove/tombstone already-stored source data. Destructive purge is intentionally deferred to `MTF-168` and should start with a dry-run/table-count report.
+
 ## 7) Garmin daily wellness backfill / outage recovery
 Use first-class backfill mode when Garmin returns empty/placeholder wellness data for completed days, or after an upstream outage.
 

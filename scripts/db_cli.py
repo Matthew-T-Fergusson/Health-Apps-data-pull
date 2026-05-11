@@ -35,6 +35,9 @@ REQUIRED_TABLES = [
     ("health", "garmin_exercise_sets_raw"),
     ("health", "lifting_set_facts"),
     ("health", "metrics_log"),
+    ("health", "apple_health_daily"),
+    ("health", "activities_manual_raw"),
+    ("health", "nutrition_manual_raw"),
 ]
 
 BOOTSTRAP_SQL_FILES = [
@@ -45,6 +48,9 @@ BOOTSTRAP_SQL_FILES = [
     "garmin_lifting_tables.sql",
     "health_activity_routes.sql",
     "health_activity_routes_deduped_view.sql",
+    "health_manual_activity_tables.sql",
+    "health_manual_nutrition_tables.sql",
+    "health_data_lineage.sql",
 ]
 
 

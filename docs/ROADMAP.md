@@ -33,6 +33,7 @@ Known gaps:
 - Integration tests are still light; most tests are unit/helper-level today
 - Garmin daily wellness now has first-class date-range backfill with parent/per-date job tracking; other sources still need the same pattern generalized.
 - Core operational metrics are now emitted to `health.metrics_log` by the orchestrator, Garmin daily sync, and QA; additional source/AI metrics remain planned.
+- Source lineage and consent are now documented through `CONSENT.md` and `health.data_lineage`; destructive source purge remains planned.
 - Visualization/dashboard layer is planned but not implemented
 
 ## Phase 1 — Shareable collaborative WIP
@@ -54,6 +55,7 @@ Goal: demonstrate that the pipeline is implementable against real infrastructure
 - [x] Add `health.backfill_jobs` tracking table plus per-date status and conflict logging
 - [x] Add durable metrics emission via `health.metrics_log`
 - [x] Instrument initial durations, Garmin 429/lockout, Garmin daily/backfill counts, and QA status
+- [x] Add source lineage + consent framework for responsible-AI auditability
 
 ## Phase 3 — Senior-reviewer hardening
 
