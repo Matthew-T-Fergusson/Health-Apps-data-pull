@@ -31,14 +31,17 @@ See:
 2. Copy `.env.example` to `.env` in repo root and set credentials.
 3. Run local checks:
    - `make test`
-4. Bootstrap + migrate DB schema:
+4. Run isolated Postgres integration checks:
+   - `make test-integration`
+   - `make test-db-down` when finished
+5. Bootstrap + migrate DB schema:
    - `.venv/bin/python scripts/db_cli.py bootstrap`
    - `.venv/bin/python scripts/db_cli.py migrate`
-5. Validate DB readiness:
+6. Validate DB readiness:
    - `.venv/bin/python scripts/db_cli.py validate`
-6. Run one-shot ingest:
+7. Run one-shot ingest:
    - `scripts/health_primary_sync_safe.sh`
-7. Inspect artifacts:
+8. Inspect artifacts:
    - `output/garmin_primary_ingest_orchestrator_last_run.json`
    - `output/health_qa_daily_latest.json`
 

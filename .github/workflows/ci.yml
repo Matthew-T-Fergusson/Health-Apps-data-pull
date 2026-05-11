@@ -24,3 +24,16 @@ jobs:
         run: python -m py_compile scripts/*.py
       - name: Run tests
         run: python -m unittest discover -s tests -v
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Run isolated Postgres integration tests
+        run: make test-integration
+      - name: Stop integration database
+        if: always()
+        run: make test-db-down

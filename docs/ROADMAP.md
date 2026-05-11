@@ -49,7 +49,7 @@ Goal: make the repo clean enough for technical friends/reviewers to understand, 
 
 Goal: demonstrate that the pipeline is implementable against real infrastructure and operable through failures.
 
-- [ ] Add Docker Compose + Postgres integration test suite
+- [x] Add Docker Compose + Postgres integration test suite
 - [ ] Add first-class backfill mode with `--since`, `--until`, and `--mode incremental|backfill`
 - [ ] Add `health.backfill_jobs` tracking table
 - [ ] Add durable metrics emission via `health.metrics_log`

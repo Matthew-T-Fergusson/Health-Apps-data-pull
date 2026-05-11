@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Multi-version Python CI matrix for 3.11, 3.12, and 3.13.
 - Focused tests for QA critical completeness failure logic.
 - Makefile and `requirements-dev.txt` for repo-local virtualenv setup and consistent local test commands.
+- Isolated Docker Compose/Postgres integration test stack with `.env.test.example`, `make test-integration`, and CI integration job.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)

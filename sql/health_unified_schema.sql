@@ -1,3 +1,87 @@
+-- Core operational tables
+CREATE TABLE IF NOT EXISTS health.sync_state (
+  source TEXT PRIMARY KEY,
+  last_cursor TEXT,
+  last_sync_at TIMESTAMPTZ,
+  status TEXT,
+  meta JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS health.daily_metrics (
+  id BIGSERIAL PRIMARY KEY,
+  source TEXT NOT NULL,
+  metric_date DATE NOT NULL,
+  resting_hr INTEGER,
+  hrv_ms DOUBLE PRECISION,
+  stress_avg DOUBLE PRECISION,
+  body_battery_avg DOUBLE PRECISION,
+  steps INTEGER,
+  calories_total DOUBLE PRECISION,
+  sleep_seconds INTEGER,
+  raw_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(source, metric_date)
+);
+
+CREATE TABLE IF NOT EXISTS health.sleep_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  source TEXT NOT NULL,
+  external_sleep_id TEXT NOT NULL,
+  sleep_start_utc TIMESTAMPTZ,
+  sleep_end_utc TIMESTAMPTZ,
+  duration_s INTEGER,
+  deep_s INTEGER,
+  light_s INTEGER,
+  rem_s INTEGER,
+  awake_s INTEGER,
+  sleep_score DOUBLE PRECISION,
+  raw_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(source, external_sleep_id)
+);
+
+CREATE TABLE IF NOT EXISTS health.body_composition_daily (
+  id BIGSERIAL PRIMARY KEY,
+  source TEXT NOT NULL,
+  metric_date DATE NOT NULL,
+  weight_kg DOUBLE PRECISION,
+  body_fat_pct DOUBLE PRECISION,
+  muscle_mass_kg DOUBLE PRECISION,
+  bone_mass_kg DOUBLE PRECISION,
+  body_water_pct DOUBLE PRECISION,
+  bmi DOUBLE PRECISION,
+  visceral_fat DOUBLE PRECISION,
+  metabolic_age DOUBLE PRECISION,
+  physique_rating DOUBLE PRECISION,
+  raw_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(source, metric_date)
+);
+
+CREATE TABLE IF NOT EXISTS health.activities (
+  id BIGSERIAL PRIMARY KEY,
+  source TEXT NOT NULL,
+  external_activity_id TEXT NOT NULL,
+  activity_type TEXT,
+  start_time_utc TIMESTAMPTZ NOT NULL,
+  moving_time_s INTEGER,
+  elapsed_time_s INTEGER,
+  distance_m DOUBLE PRECISION,
+  elevation_gain_m DOUBLE PRECISION,
+  avg_hr INTEGER,
+  max_hr INTEGER,
+  calories DOUBLE PRECISION,
+  raw_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(source, external_activity_id)
+);
+
 -- Raw source tables
 CREATE TABLE IF NOT EXISTS health.activities_strava_raw (
   id BIGSERIAL PRIMARY KEY,

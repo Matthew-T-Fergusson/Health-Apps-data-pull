@@ -36,6 +36,19 @@ Run the same unittest smoke path used by CI:
 make ci-smoke
 ```
 
+Run integration tests against an isolated Docker/Postgres instance:
+
+```bash
+make test-integration
+make test-db-down
+```
+
+Safety notes:
+- Integration tests use `.env.test`, copied from `.env.test.example` if missing.
+- The test database maps to port `55432`, not default Postgres `5432`.
+- Tests refuse to run unless `APP_ENV=test`.
+- Tests refuse default/live database settings such as `PGDATABASE=health_ops` or `PGPORT=5432`.
+
 ## 4) DB setup/validation
 If your project includes `scripts/db_cli.py`:
 ```bash
