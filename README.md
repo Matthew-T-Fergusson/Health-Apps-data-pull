@@ -1,17 +1,26 @@
-# Health Apps Data Pull (Garmin + Strava)
+# Health Apps Data Pull
 
-Personal Garmin, Strava, Apple Health export, manual activity, and manual nutrition ingestion pipeline with production-style reliability patterns for a private PostgreSQL store.
+AI-assisted data ops prototype for reliable personal-data automation: Garmin, Strava, Apple Health export, manual activity, and manual nutrition ingestion into a private PostgreSQL store.
+
+The project is intentionally a work in progress. The aim is to demonstrate how to build an implementable automation pipeline around messy third-party data sources: ingest raw data, normalize it, detect quality failures, recover from outages, and expose the result through dashboards and AI-assisted operational workflows.
 
 ## Goals
 - Private data ownership
 - Resilient ingestion with rate-limit handling
 - Raw + curated storage model
+- QA gates based on user-facing data completeness
+- Recovery/backfill workflows for source outages
 - Open-source deployability (no hardcoded local secrets)
+- Visualization path that starts streamlined, then iterates toward a fuller data-platform construction
+- Future AI automation layer for status, remediation, and onboarding-style demos
 
 ## Scope statement
 This project currently provides **core Garmin + Strava ingestion**, Apple Health export import, manual activity/nutrition fallbacks, and reliability controls that were added incrementally for a real personal pipeline.
-It should not yet be represented as complete "all datapoints" parity for every source endpoint.
+
+It should not yet be represented as a finished health app or complete "all datapoints" parity for every source endpoint. It is best understood as a practical automation/data-engineering prototype that is being hardened into a cleaner collaborative project.
+
 See:
+- `docs/ROADMAP.md`
 - `docs/DATA_COVERAGE_MATRIX.md`
 - `docs/KNOWN_LIMITATIONS.md`
 - `docs/SUPPORT_SCOPE.md`
@@ -31,6 +40,29 @@ See:
    - `output/health_qa_daily_latest.json`
 
 ## Architecture (high level)
+
+```mermaid
+flowchart LR
+  G[Garmin Connect] --> GW[garmin_*_sync.py]
+  S[Strava API] --> SW[strava_daily_sync.py]
+  A[Apple Health export] --> AW[apple_health_phase1_import.py]
+  M[Manual activity / nutrition] --> MW[manual_*_capture.py]
+
+  O[orchestrator] -.coordinates.-> GW
+  O -.coordinates.-> SW
+
+  GW --> R[(raw tables)]
+  SW --> R
+  AW --> R
+  MW --> R
+
+  R --> C[(curated daily/activity tables)]
+  C --> Q[health_qa_daily.py]
+  Q --> Status[status artifacts / future metrics]
+  C --> Viz[Streamlit first / platform layer later]
+  Status --> AI[future AI automation workflows]
+```
+
 - Orchestrator: `scripts/garmin_primary_ingest_orchestrator.py`
 - Source workers: `scripts/garmin_*_sync.py`, `scripts/strava_daily_sync.py`, `scripts/apple_health_phase1_import.py`
 - Manual capture workers: `scripts/manual_activity_capture.py`, `scripts/manual_nutrition_capture.py`
@@ -102,5 +134,17 @@ Optional Gmail fetch helper, when `gog` is configured locally:
 scripts/apple_health_fetch_and_import.sh
 ```
 
-## Latest progress report
-- `docs/reports/health-sync-progress-2026-04-08.md`
+## Roadmap and collaboration
+- `docs/ROADMAP.md` — current hardening roadmap and planned visualization/AI automation layer
+- `docs/reports/health-sync-progress-2026-04-08.md` — latest progress report
+
+Planned visualization direction:
+- Start with a streamlined dashboard layer, likely Streamlit, to move quickly and learn from real usage.
+- Iterate toward a more platform-style construction once the useful views and workflows are clear.
+- Use that progression intentionally to compare fast prototype dashboards with more durable product/data-platform patterns.
+
+Areas where feedback would be especially useful:
+- Dashboard views that would make the system easiest to understand quickly
+- AI-assisted workflows that would best demonstrate client-facing automation/POC skills
+- Schema boundaries between raw, curated, manual fallback, QA, and future metrics
+- How to make the project reusable beyond one personal health-data use case

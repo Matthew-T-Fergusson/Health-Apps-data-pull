@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- README/project framing as an AI-assisted data ops prototype with Streamlit-first visualization direction.
+- Public roadmap for collaborative hardening, visualization, and AI automation layers.
+- Mermaid architecture diagram in README.
+- Multi-version Python CI matrix for 3.11, 3.12, and 3.13.
+- Focused tests for QA critical completeness failure logic.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)
@@ -30,6 +35,8 @@ All notable changes to this project will be documented in this file.
 - Health ingest and nutrition-imputation docs.
 
 ### Changed
+- Replaced manual activity matching magic numbers with named constants and clearer helper variable names.
+- Renamed terse scalar-conversion/fetch helpers to descriptive names.
 - Path handling made portable (repo-relative/env-driven)
 - Added architecture/scope/coverage/limitations docs
 - Garmin daily QA now reports placeholder/empty Garmin wellness source days and reload attempts separately from parser/runtime failures.

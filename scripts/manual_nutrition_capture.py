@@ -31,7 +31,7 @@ def parse_dt(s: str) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def f(v):
+def to_float(v):
     try:
         return float(v) if v is not None else None
     except Exception:
@@ -63,10 +63,10 @@ def main():
     evidence = json.loads(args.evidence_json or "{}")
 
     # derive totals from items if not provided
-    item_cals = sum(f(i.get("calories")) or 0 for i in items)
-    item_pro = sum(f(i.get("protein_g")) or 0 for i in items)
-    item_carbs = sum(f(i.get("carbs_g")) or 0 for i in items)
-    item_fat = sum(f(i.get("fat_g")) or 0 for i in items)
+    item_cals = sum(to_float(item.get("calories")) or 0 for item in items)
+    item_pro = sum(to_float(item.get("protein_g")) or 0 for item in items)
+    item_carbs = sum(to_float(item.get("carbs_g")) or 0 for item in items)
+    item_fat = sum(to_float(item.get("fat_g")) or 0 for item in items)
 
     total_calories = args.calories if args.calories is not None else (item_cals if items else None)
     total_protein = args.protein_g if args.protein_g is not None else (item_pro if items else None)
@@ -143,12 +143,12 @@ def main():
                 external_id,
                 idx,
                 item.get("name") or f"item_{idx+1}",
-                f(item.get("qty")),
+                to_float(item.get("qty")),
                 item.get("unit"),
-                f(item.get("calories")),
-                f(item.get("protein_g")),
-                f(item.get("carbs_g")),
-                f(item.get("fat_g")),
+                to_float(item.get("calories")),
+                to_float(item.get("protein_g")),
+                to_float(item.get("carbs_g")),
+                to_float(item.get("fat_g")),
                 item.get("notes"),
                 Json(item),
             ),

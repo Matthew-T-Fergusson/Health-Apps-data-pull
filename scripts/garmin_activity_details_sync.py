@@ -44,14 +44,14 @@ def parse_ts(s):
         return None
 
 
-def f(v):
+def to_float(v):
     try:
         return float(v) if v is not None else None
     except Exception:
         return None
 
 
-def i(v):
+def to_int(v):
     try:
         return int(v) if v is not None else None
     except Exception:
@@ -99,24 +99,24 @@ def upsert_training(cur, aid, start_utc, activity_type, payload):
             aid,
             start_utc,
             activity_type,
-            f(payload.get("activityTrainingLoad")),
-            f(payload.get("aerobicTrainingEffect")),
-            f(payload.get("anaerobicTrainingEffect")),
+            to_float(payload.get("activityTrainingLoad")),
+            to_float(payload.get("aerobicTrainingEffect")),
+            to_float(payload.get("anaerobicTrainingEffect")),
             payload.get("trainingEffectLabel"),
-            f(payload.get("vO2MaxValue")),
-            f(payload.get("averageSpeed")),
-            f(payload.get("maxSpeed")),
-            i(payload.get("averageHR")),
-            i(payload.get("maxHR")),
-            f(payload.get("averageBikeCadenceInRevPerMinute") or payload.get("averageRunCadenceInStepsPerMinute") or payload.get("averageCadence")),
-            f(payload.get("maxBikeCadenceInRevPerMinute") or payload.get("maxRunCadenceInStepsPerMinute") or payload.get("maxCadence")),
-            f(payload.get("averagePower")),
-            f(payload.get("maxPower")),
-            f(payload.get("calories")),
-            f(payload.get("movingDuration") or payload.get("duration")),
-            f(payload.get("elapsedDuration")),
-            f(payload.get("distance")),
-            f(payload.get("elevationGain")),
+            to_float(payload.get("vO2MaxValue")),
+            to_float(payload.get("averageSpeed")),
+            to_float(payload.get("maxSpeed")),
+            to_int(payload.get("averageHR")),
+            to_int(payload.get("maxHR")),
+            to_float(payload.get("averageBikeCadenceInRevPerMinute") or payload.get("averageRunCadenceInStepsPerMinute") or payload.get("averageCadence")),
+            to_float(payload.get("maxBikeCadenceInRevPerMinute") or payload.get("maxRunCadenceInStepsPerMinute") or payload.get("maxCadence")),
+            to_float(payload.get("averagePower")),
+            to_float(payload.get("maxPower")),
+            to_float(payload.get("calories")),
+            to_float(payload.get("movingDuration") or payload.get("duration")),
+            to_float(payload.get("elapsedDuration")),
+            to_float(payload.get("distance")),
+            to_float(payload.get("elevationGain")),
             Json(payload),
         ),
     )
@@ -159,18 +159,18 @@ def sync_laps(cur, aid, laps):
                 aid,
                 idx,
                 parse_ts(lap.get("startTimeGMT") or lap.get("startTime")),
-                f(lap.get("duration") or lap.get("movingDuration")),
-                f(lap.get("elapsedDuration")),
-                f(lap.get("distance")),
-                f(lap.get("averageSpeed")),
-                f(lap.get("maxSpeed")),
-                i(lap.get("averageHR")),
-                i(lap.get("maxHR")),
-                f(lap.get("averageBikeCadenceInRevPerMinute") or lap.get("averageRunCadenceInStepsPerMinute") or lap.get("averageCadence")),
-                f(lap.get("averagePower")),
-                f(lap.get("elevationGain")),
-                f(lap.get("elevationLoss")),
-                f(lap.get("calories")),
+                to_float(lap.get("duration") or lap.get("movingDuration")),
+                to_float(lap.get("elapsedDuration")),
+                to_float(lap.get("distance")),
+                to_float(lap.get("averageSpeed")),
+                to_float(lap.get("maxSpeed")),
+                to_int(lap.get("averageHR")),
+                to_int(lap.get("maxHR")),
+                to_float(lap.get("averageBikeCadenceInRevPerMinute") or lap.get("averageRunCadenceInStepsPerMinute") or lap.get("averageCadence")),
+                to_float(lap.get("averagePower")),
+                to_float(lap.get("elevationGain")),
+                to_float(lap.get("elevationLoss")),
+                to_float(lap.get("calories")),
                 lap.get("lapType") or lap.get("intensityType"),
                 Json(lap),
             ),
@@ -182,11 +182,11 @@ def sync_zones(cur, aid, hr_zones, power_zones):
 
     def ins(source, arr):
         for idx, z in enumerate(arr or []):
-            secs = f(z.get("secsInZone") or z.get("secondsInZone") or z.get("timeInZone") or z.get("secs"))
-            pct = f(z.get("pctInZone") or z.get("percentTimeInZone") or z.get("zonePercent"))
+            secs = to_float(z.get("secsInZone") or z.get("secondsInZone") or z.get("timeInZone") or z.get("secs"))
+            pct = to_float(z.get("pctInZone") or z.get("percentTimeInZone") or z.get("zonePercent"))
             if pct is None and secs is not None:
                 # infer if total provided in payload
-                total = f((arr or [{}])[0].get("activityDuration"))
+                total = to_float((arr or [{}])[0].get("activityDuration"))
                 if total and total > 0:
                     pct = (secs / total) * 100.0
             cur.execute(
@@ -241,9 +241,9 @@ def sync_weather(cur, aid, weather):
           updated_at=now()
         """,
         (
-            aid, issue, f(weather.get("temp")), f(weather.get("apparentTemp")), f(weather.get("dewPoint")),
-            f(weather.get("relativeHumidity")), f(weather.get("windDirection")), weather.get("windDirectionCompassPoint"),
-            f(weather.get("windSpeed")), f(weather.get("windGust")), f(weather.get("latitude")), f(weather.get("longitude")),
+            aid, issue, to_float(weather.get("temp")), to_float(weather.get("apparentTemp")), to_float(weather.get("dewPoint")),
+            to_float(weather.get("relativeHumidity")), to_float(weather.get("windDirection")), weather.get("windDirectionCompassPoint"),
+            to_float(weather.get("windSpeed")), to_float(weather.get("windGust")), to_float(weather.get("latitude")), to_float(weather.get("longitude")),
             wtype, Json(weather),
         ),
     )
@@ -282,9 +282,9 @@ def sync_typed_splits(cur, aid, typed):
             """,
             (
                 aid, idx, s.get("type"), parse_ts(s.get("startTimeGMT")), parse_ts(s.get("endTimeGMT")),
-                f(s.get("duration")), f(s.get("movingDuration")), f(s.get("elapsedDuration")), f(s.get("distance")),
-                f(s.get("averageSpeed")), i(s.get("averageHR")), i(s.get("maxHR")), i(s.get("totalExerciseReps")),
-                f(s.get("calories")), Json(s.get("lapIndexes") or []), Json(s),
+                to_float(s.get("duration")), to_float(s.get("movingDuration")), to_float(s.get("elapsedDuration")), to_float(s.get("distance")),
+                to_float(s.get("averageSpeed")), to_int(s.get("averageHR")), to_int(s.get("maxHR")), to_int(s.get("totalExerciseReps")),
+                to_float(s.get("calories")), Json(s.get("lapIndexes") or []), Json(s),
             ),
         )
 

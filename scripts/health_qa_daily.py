@@ -24,10 +24,48 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 
 
-def q1(cur, sql, args=None):
+def fetch_scalar(cur, sql, args=None):
     cur.execute(sql, args or ())
     r = cur.fetchone()
     return r[0] if r else None
+
+
+def summarize_critical_completeness(row):
+    (
+        expected_days,
+        steps_days,
+        sleep_days,
+        resting_hr_days,
+        hrv_days,
+        stress_days,
+        body_battery_days,
+        all_missing_days,
+        all_missing_dates,
+        source_empty_days,
+    ) = row
+    critical = {
+        "lookback_completed_days": int(expected_days or 0),
+        "steps_days": int(steps_days or 0),
+        "sleep_days": int(sleep_days or 0),
+        "resting_hr_days": int(resting_hr_days or 0),
+        "hrv_days": int(hrv_days or 0),
+        "stress_days": int(stress_days or 0),
+        "body_battery_days": int(body_battery_days or 0),
+        "all_critical_missing_days": int(all_missing_days or 0),
+        "all_critical_missing_dates": [str(d) for d in (all_missing_dates or [])],
+        "garmin_source_empty_days": int(source_empty_days or 0),
+    }
+    issues = []
+    if critical["all_critical_missing_days"] > 0:
+        issues.append({
+            "severity": "fail",
+            "type": "critical_metrics_missing",
+            "metric": "daily_wellness_core",
+            "days": critical["all_critical_missing_days"],
+            "dates": critical["all_critical_missing_dates"],
+            "note": "Sync freshness alone is insufficient: recent completed days have no steps/sleep/resting_hr/hrv/stress/body_battery values.",
+        })
+    return critical, issues
 
 
 def main():
@@ -99,7 +137,7 @@ def main():
     # Coverage checks (last 14 days)
     coverage = {}
 
-    coverage["daily_metrics_days_14"] = q1(
+    coverage["daily_metrics_days_14"] = fetch_scalar(
         cur,
         """
         select count(distinct metric_date)
@@ -110,7 +148,7 @@ def main():
     if (coverage["daily_metrics_days_14"] or 0) < 10:
         issues.append({"severity": "warn", "type": "coverage", "metric": "daily_metrics_days_14", "value": coverage["daily_metrics_days_14"]})
 
-    coverage["readiness_days_14"] = q1(
+    coverage["readiness_days_14"] = fetch_scalar(
         cur,
         """
         select count(distinct metric_date)
@@ -200,43 +238,12 @@ def main():
         """,
         (critical_start_expr,),
     )
-    (
-        expected_days,
-        steps_days,
-        sleep_days,
-        resting_hr_days,
-        hrv_days,
-        stress_days,
-        body_battery_days,
-        all_missing_days,
-        all_missing_dates,
-        source_empty_days,
-    ) = cur.fetchone()
-    critical = {
-        "lookback_completed_days": int(expected_days or 0),
-        "steps_days": int(steps_days or 0),
-        "sleep_days": int(sleep_days or 0),
-        "resting_hr_days": int(resting_hr_days or 0),
-        "hrv_days": int(hrv_days or 0),
-        "stress_days": int(stress_days or 0),
-        "body_battery_days": int(body_battery_days or 0),
-        "all_critical_missing_days": int(all_missing_days or 0),
-        "all_critical_missing_dates": [str(d) for d in (all_missing_dates or [])],
-        "garmin_source_empty_days": int(source_empty_days or 0),
-    }
-    if critical["all_critical_missing_days"] > 0:
-        issues.append({
-            "severity": "fail",
-            "type": "critical_metrics_missing",
-            "metric": "daily_wellness_core",
-            "days": critical["all_critical_missing_days"],
-            "dates": critical["all_critical_missing_dates"],
-            "note": "Sync freshness alone is insufficient: recent completed days have no steps/sleep/resting_hr/hrv/stress/body_battery values.",
-        })
+    critical, critical_issues = summarize_critical_completeness(cur.fetchone())
+    issues.extend(critical_issues)
 
     # Match integrity
     match_stats = {}
-    match_stats["matches_30d"] = q1(
+    match_stats["matches_30d"] = fetch_scalar(
         cur,
         """
         select count(*)
@@ -244,8 +251,8 @@ def main():
         where created_at >= now() - interval '30 day'
         """,
     )
-    match_stats["routes_raw"] = q1(cur, "select count(*) from health.activity_routes")
-    match_stats["routes_deduped"] = q1(cur, "select count(*) from health.activity_routes_deduped")
+    match_stats["routes_raw"] = fetch_scalar(cur, "select count(*) from health.activity_routes")
+    match_stats["routes_deduped"] = fetch_scalar(cur, "select count(*) from health.activity_routes_deduped")
 
     # Severity
     has_fail = any(i["severity"] == "fail" for i in issues)

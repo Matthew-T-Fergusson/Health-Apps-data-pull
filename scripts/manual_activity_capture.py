@@ -24,6 +24,15 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 SQL_PATH = os.getenv("HEALTH_MANUAL_SQL", str(WORKSPACE_DIR / "sql" / "health_manual_activity_tables.sql"))
 
+MATCH_WINDOW_MINUTES = 90
+MAX_TIME_DELTA_SECONDS = MATCH_WINDOW_MINUTES * 60
+MAX_DURATION_DELTA_SECONDS = 30 * 60
+TIME_SCORE_WEIGHT = 0.7
+DURATION_SCORE_WEIGHT = 0.2
+TYPE_MATCH_SCORE_BONUS = 0.1
+MIN_LINK_SCORE = 0.45
+LINK_MATCH_METHOD = "time_window_duration_type"
+
 
 def parse_dt(s: str) -> datetime:
     dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
@@ -42,17 +51,17 @@ def gen_manual_id(activity_type: str, start_utc: datetime) -> str:
 
 
 def find_best_link(cur, start_utc: datetime, moving_time_s: int | None, activity_type: str):
-    # Heuristic: nearest timestamp within 90 min + duration proximity if available.
+    # Heuristic: nearest timestamp within MATCH_WINDOW_MINUTES + duration proximity if available.
     cur.execute(
         """
         WITH candidates AS (
           SELECT 'garmin' AS src, external_activity_id, start_time_utc, moving_time_s, activity_type
           FROM health.activities_garmin_raw
-          WHERE start_time_utc BETWEEN %s::timestamptz - interval '90 min' AND %s::timestamptz + interval '90 min'
+          WHERE start_time_utc BETWEEN %s::timestamptz - make_interval(mins => %s) AND %s::timestamptz + make_interval(mins => %s)
           UNION ALL
           SELECT 'strava' AS src, external_activity_id, start_time_utc, moving_time_s, activity_type
           FROM health.activities_strava_raw
-          WHERE start_time_utc BETWEEN %s::timestamptz - interval '90 min' AND %s::timestamptz + interval '90 min'
+          WHERE start_time_utc BETWEEN %s::timestamptz - make_interval(mins => %s) AND %s::timestamptz + make_interval(mins => %s)
         )
         SELECT src, external_activity_id,
                abs(extract(epoch from (start_time_utc - %s::timestamptz))) AS dt_sec,
@@ -65,7 +74,11 @@ def find_best_link(cur, start_utc: datetime, moving_time_s: int | None, activity
         ORDER BY dt_sec ASC
         LIMIT 20
         """,
-        (start_utc, start_utc, start_utc, start_utc, start_utc, moving_time_s, moving_time_s),
+        (
+            start_utc, MATCH_WINDOW_MINUTES, start_utc, MATCH_WINDOW_MINUTES,
+            start_utc, MATCH_WINDOW_MINUTES, start_utc, MATCH_WINDOW_MINUTES,
+            start_utc, moving_time_s, moving_time_s,
+        ),
     )
     rows = cur.fetchall()
     if not rows:
@@ -73,20 +86,22 @@ def find_best_link(cur, start_utc: datetime, moving_time_s: int | None, activity
 
     best = None
     best_score = -1.0
-    t = normalize_type(activity_type)
-    for src, ext_id, dt_sec, dur_diff, src_type in rows:
+    normalized_manual_type = normalize_type(activity_type)
+    for source, external_id, time_delta_seconds, duration_delta_seconds, source_type in rows:
         score = 1.0
-        score -= min(float(dt_sec or 0) / 5400.0, 1.0) * 0.7
-        if dur_diff is not None:
-            score -= min(float(dur_diff) / 1800.0, 1.0) * 0.2
-        src_t = normalize_type(src_type or "")
-        if t and src_t and (t in src_t or src_t in t):
-            score += 0.1
+        score -= min(float(time_delta_seconds or 0) / MAX_TIME_DELTA_SECONDS, 1.0) * TIME_SCORE_WEIGHT
+        if duration_delta_seconds is not None:
+            score -= min(float(duration_delta_seconds) / MAX_DURATION_DELTA_SECONDS, 1.0) * DURATION_SCORE_WEIGHT
+        normalized_source_type = normalize_type(source_type or "")
+        if normalized_manual_type and normalized_source_type and (
+            normalized_manual_type in normalized_source_type or normalized_source_type in normalized_manual_type
+        ):
+            score += TYPE_MATCH_SCORE_BONUS
         if score > best_score:
             best_score = score
-            best = (src, ext_id, score, f"time±90m_duration_type")
+            best = (source, external_id, score, LINK_MATCH_METHOD)
 
-    if best and best[2] >= 0.45:
+    if best and best[2] >= MIN_LINK_SCORE:
         return best
     return None
 
