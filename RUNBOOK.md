@@ -171,6 +171,60 @@ Operational playbook for “Garmin was blank for 3 days”:
 3. Inspect `health.backfill_job_dates` for `empty_payload` or `failed` dates.
 4. Re-run QA. If values remain missing, treat as upstream/source-data failure rather than job success.
 
+## 7a) Data quarantine and recovery decision narratives
+Use `health.data_quarantine` for records that fail validation but should not block the entire pipeline. Quarantine is for **operator/AI-agent decisioning**, not silent deletion.
+
+Inspect open quarantine items:
+
+```sql
+SELECT quarantine_id, source_system, entity_type, entity_id, metric_date,
+       detection_signal, severity, recommended_action, reason, created_at
+FROM health.data_quarantine_open;
+```
+
+Insert pattern for a non-blocking bad record:
+
+```sql
+INSERT INTO health.data_quarantine (
+  source_system, entity_type, entity_id, metric_date,
+  detection_signal, severity, reason, recommended_action, raw_payload, evidence
+) VALUES (
+  'apple_health', 'daily_export_record', 'export-row-123', DATE '2026-05-01',
+  'validation_failed', 'warn', 'Malformed duration field; skipped from daily rollup',
+  'review', '{"example":"payload"}'::jsonb, '{"parser":"apple_health_phase1_import.py"}'::jsonb
+);
+```
+
+Decision tree: duplicate Strava/Garmin activities
+- Detection signal: same start time/duration/distance window, or `activity_matches` conflict.
+- Automated response: preserve raw Garmin and Strava rows; create/keep one match if confidence is high; quarantine ambiguous duplicates with `recommended_action='merge'`.
+- Escalation path: operator reviews route/evidence and sets quarantine `status='resolved'` with notes.
+- Audit evidence: `health.activity_matches`, source raw tables, `health.data_quarantine`.
+
+Decision tree: malformed Apple Health export rows
+- Detection signal: XML parse error, unsupported unit, impossible negative duration, or missing required timestamp.
+- Automated response: skip the malformed record, continue import, quarantine the raw/evidence snapshot with `recommended_action='review'` or `fix_source`.
+- Escalation path: if many rows fail, stop treating it as isolated bad data and escalate the export/import format.
+- Audit evidence: `health.apple_health_daily` aggregate counts, import logs, `health.data_quarantine`.
+
+Decision tree: manual-vs-device activity conflict
+- Detection signal: manual activity overlaps Garmin/Strava device activity but differs materially in distance/duration/calories.
+- Automated response: do not double-count; keep manual record unlinked or link with low confidence; quarantine the conflict with `recommended_action='merge'`.
+- Escalation path: operator chooses device value, manual correction, or ignored duplicate and records resolution notes.
+- Audit evidence: `health.activities_manual_raw`, `health.activity_manual_links`, `health.activities_unified_with_manual`, `health.data_quarantine`.
+
+Decision tree: stale data after long source outage
+- Detection signal: QA freshness failure, critical missing days, Garmin lockout/429 metrics, or source-empty wellness payloads.
+- Automated response: do not mark pipeline healthy based only on job freshness; run conservative backfill for the missing date range.
+- Escalation path: if backfill returns `empty_payload` or repeated failures, leave source issue open and escalate as upstream/source availability.
+- Audit evidence: `health.metrics_log`, `health.backfill_jobs`, `health.backfill_job_dates`, `health.data_quarantine` for repeated unresolved source failures.
+
+Decision tree: schema changes mid-sync
+- Detection signal: parser/key errors, raw JSON schema drift, missing expected fields, or sudden null-rate increase.
+- Automated response: preserve raw payload where safe, quarantine affected records with `recommended_action='fix_source'`, and continue unaffected records.
+- Escalation path: update parser/schema baseline, add regression test, resolve quarantine rows after reprocessing/backfill.
+- Audit evidence: raw source tables, future schema-drift output, `health.data_quarantine`, tests/commit history.
+
 ## 8) Manual activity capture (watch-miss fallback)
 ```bash
 .venv/bin/python scripts/manual_activity_capture.py \

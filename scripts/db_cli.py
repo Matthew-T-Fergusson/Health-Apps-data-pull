@@ -38,6 +38,7 @@ REQUIRED_TABLES = [
     ("health", "apple_health_daily"),
     ("health", "activities_manual_raw"),
     ("health", "nutrition_manual_raw"),
+    ("health", "data_quarantine"),
 ]
 
 BOOTSTRAP_SQL_FILES = [
@@ -51,6 +52,7 @@ BOOTSTRAP_SQL_FILES = [
     "health_manual_activity_tables.sql",
     "health_manual_nutrition_tables.sql",
     "health_data_lineage.sql",
+    "health_data_quarantine.sql",
 ]
 
 

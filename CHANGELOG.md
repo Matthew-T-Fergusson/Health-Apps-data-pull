@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - First-class Garmin daily wellness backfill mode with explicit date ranges, conservative pacing, merge-safe writes, parent/per-date job tracking, and value-conflict logging.
 - Durable `health.metrics_log` operational metrics path with initial emitters in the orchestrator, Garmin daily sync, and QA.
 - Consent/source-lineage framework with `CONSENT.md`, additive consent metadata, and `health.data_lineage` view.
+- Data quarantine schema and RUNBOOK recovery decision narratives for duplicate activities, malformed Apple Health rows, manual/device conflicts, stale source data, and schema changes.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)

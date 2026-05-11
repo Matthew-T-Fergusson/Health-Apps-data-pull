@@ -11,6 +11,7 @@ The project is intentionally a work in progress. The aim is to demonstrate how t
 - QA gates based on user-facing data completeness
 - Recovery/backfill workflows for source outages
 - Source lineage and consent metadata for responsible AI auditability
+- Data quarantine patterns for records that need review instead of blocking the full pipeline
 - Open-source deployability (no hardcoded local secrets)
 - Visualization path that starts streamlined, then iterates toward a fuller data-platform construction
 - Future AI automation layer for status, remediation, and onboarding-style demos

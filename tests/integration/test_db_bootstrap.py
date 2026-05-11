@@ -22,6 +22,7 @@ CORE_TABLES = [
     ("health", "apple_health_daily"),
     ("health", "activities_manual_raw"),
     ("health", "nutrition_manual_raw"),
+    ("health", "data_quarantine"),
     ("health", "activity_routes"),
     ("health", "readiness_daily"),
     ("health", "garmin_exercise_sets_raw"),
@@ -103,6 +104,29 @@ def test_bootstrap_migrate_validate_against_isolated_postgres():
         )
         assert cur.fetchone(), "missing health.data_lineage view"
         cur.execute("SELECT * FROM health.data_lineage LIMIT 0")
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.views
+            WHERE table_schema='health' AND table_name='data_quarantine_open'
+            """
+        )
+        assert cur.fetchone(), "missing health.data_quarantine_open view"
+        cur.execute(
+            """
+            INSERT INTO health.data_quarantine (
+              source_system, entity_type, entity_id, metric_date,
+              detection_signal, severity, reason, recommended_action, evidence
+            ) VALUES (
+              'test_source', 'test_record', 'record-1', DATE '2026-05-01',
+              'integration_test', 'warn', 'synthetic quarantine validation', 'review', '{}'::jsonb
+            )
+            RETURNING quarantine_id
+            """
+        )
+        quarantine_id = cur.fetchone()[0]
+        cur.execute("SELECT quarantine_id FROM health.data_quarantine_open WHERE quarantine_id=%s", (quarantine_id,))
+        assert cur.fetchone(), "open quarantine record missing from view"
 
 
 def test_bootstrap_is_idempotent_against_isolated_postgres():
