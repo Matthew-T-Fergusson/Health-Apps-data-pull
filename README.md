@@ -26,16 +26,19 @@ See:
 - `docs/SUPPORT_SCOPE.md`
 
 ## Quickstart
-1. Create virtualenv and install deps.
+1. Create/update the repo-local virtualenv:
+   - `make venv`
 2. Copy `.env.example` to `.env` in repo root and set credentials.
-3. Bootstrap + migrate DB schema:
-   - `python3 scripts/db_cli.py bootstrap`
-   - `python3 scripts/db_cli.py migrate`
-4. Validate DB readiness:
-   - `python3 scripts/db_cli.py validate`
-5. Run one-shot ingest:
+3. Run local checks:
+   - `make test`
+4. Bootstrap + migrate DB schema:
+   - `.venv/bin/python scripts/db_cli.py bootstrap`
+   - `.venv/bin/python scripts/db_cli.py migrate`
+5. Validate DB readiness:
+   - `.venv/bin/python scripts/db_cli.py validate`
+6. Run one-shot ingest:
    - `scripts/health_primary_sync_safe.sh`
-6. Inspect artifacts:
+7. Inspect artifacts:
    - `output/garmin_primary_ingest_orchestrator_last_run.json`
    - `output/health_qa_daily_latest.json`
 

@@ -9,33 +9,54 @@ Operational guide for **Health Apps Data Pull** (Garmin + Strava).
 - `.env` created from `.env.example`
 
 ## 2) First-time setup
+Prefer the repo-local virtualenv managed by `make` so tests do not accidentally run against system Python.
+
+```bash
+make venv
+```
+
+Equivalent manual setup:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-## 3) DB setup/validation
+## 3) Local checks
+Run the local smoke/test suite through the repo virtualenv:
+
+```bash
+make test
+```
+
+Run the same unittest smoke path used by CI:
+
+```bash
+make ci-smoke
+```
+
+## 4) DB setup/validation
 If your project includes `scripts/db_cli.py`:
 ```bash
-python3 scripts/db_cli.py bootstrap
-python3 scripts/db_cli.py migrate
-python3 scripts/db_cli.py validate
+.venv/bin/python scripts/db_cli.py bootstrap
+.venv/bin/python scripts/db_cli.py migrate
+.venv/bin/python scripts/db_cli.py validate
 ```
 
-## 4) Run a one-shot ingest
+## 5) Run a one-shot ingest
 ```bash
 scripts/health_primary_sync_safe.sh
 ```
 
-## 5) Run QA only
+## 6) Run QA only
 ```bash
-python3 scripts/health_qa_daily.py
+.venv/bin/python scripts/health_qa_daily.py
 ```
 
-## 6) Manual activity capture (watch-miss fallback)
+## 7) Manual activity capture (watch-miss fallback)
 ```bash
-python3 scripts/manual_activity_capture.py \
+.venv/bin/python scripts/manual_activity_capture.py \
   --start "2026-04-08T15:00:00-04:00" \
   --activity-type treadmill_manual \
   --duration-min 32 \
@@ -46,9 +67,9 @@ python3 scripts/manual_activity_capture.py \
 - Writes `health.activities_manual_raw`
 - Attempts optional auto-link into `health.activity_manual_links` to prevent duplicate counting
 
-## 7) Manual nutrition capture (photo/chat estimates)
+## 8) Manual nutrition capture (photo/chat estimates)
 ```bash
-python3 scripts/manual_nutrition_capture.py \
+.venv/bin/python scripts/manual_nutrition_capture.py \
   --when "2026-04-08T18:30:00-04:00" \
   --meal-name "Beef bowl" \
   --meal-type dinner \
@@ -59,12 +80,12 @@ python3 scripts/manual_nutrition_capture.py \
 - Rolls up to `health.nutrition_daily_totals`
 - Appears in `health.health_daily_combined` when the day exists in `health.daily_metrics`
 
-## 8) Key artifacts to inspect
+## 9) Key artifacts to inspect
 - `output/garmin_primary_ingest_orchestrator_last_run.json`
 - `output/health_primary_sync_last_run.json`
 - `output/health_qa_daily_latest.json`
 
-## 7) Common failures + fixes
+## 10) Common failures + fixes
 
 ### Garmin rate-limit / lockout
 - Symptom: lockout active or Garmin auth 429
@@ -84,7 +105,7 @@ python3 scripts/manual_nutrition_capture.py \
   2. run one-shot ingest
   3. re-run QA
 
-## 8) Scheduling recommendation
+## 11) Scheduling recommendation
 - Use orchestrator wrapper every 6 hours:
   - `scripts/health_primary_sync_safe.sh`
 - Keep anti-rate-limit cadence; avoid aggressive retries.
