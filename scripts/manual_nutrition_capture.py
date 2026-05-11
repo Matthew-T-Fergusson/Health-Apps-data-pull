@@ -11,12 +11,11 @@ import argparse
 import json
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from common_env import load_env
-
 import psycopg2
+from common_env import load_env
 from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
@@ -27,8 +26,8 @@ SQL_PATH = os.getenv("HEALTH_NUTRITION_SQL", str(WORKSPACE_DIR / "sql" / "health
 def parse_dt(s: str) -> datetime:
     dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def to_float(v):
@@ -87,7 +86,7 @@ def main():
 
     raw_payload = {
         "items_count": len(items),
-        "entered_at_utc": datetime.now(timezone.utc).isoformat(),
+        "entered_at_utc": datetime.now(UTC).isoformat(),
         "notes": args.notes,
     }
 

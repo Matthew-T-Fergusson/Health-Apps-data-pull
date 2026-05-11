@@ -14,8 +14,8 @@ import json
 import os
 from pathlib import Path
 
-from common_env import load_env
 import psycopg2
+from common_env import load_env
 from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]

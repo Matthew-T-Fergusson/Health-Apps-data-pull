@@ -4,10 +4,8 @@ import os
 import sys
 from pathlib import Path
 
-from common_env import load_env
-from typing import List
-
 import psycopg2
+from common_env import load_env
 
 ROOT = Path(__file__).resolve().parents[1]
 SQL_DIR = ROOT / "sql"
@@ -84,7 +82,7 @@ def ensure_meta(cur):
     )
 
 
-def migration_files() -> List[Path]:
+def migration_files() -> list[Path]:
     if not MIGRATIONS_DIR.exists():
         return []
     return sorted([p for p in MIGRATIONS_DIR.iterdir() if p.suffix == ".sql"], key=lambda p: p.name)

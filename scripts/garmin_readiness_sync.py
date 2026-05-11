@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
+from datetime import date, timedelta
 from pathlib import Path
 
-from common_env import load_env
-from datetime import date, timedelta, datetime
-
 import psycopg2
-from psycopg2.extras import Json
+from common_env import load_env
 from garminconnect import Garmin
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))

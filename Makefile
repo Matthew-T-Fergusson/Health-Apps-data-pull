@@ -3,12 +3,15 @@ VENV ?= .venv
 VENV_PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 
-.PHONY: help venv install test test-unit compile ci-smoke test-db-up test-db-down test-integration clean
+.PHONY: help venv install test test-unit compile lint typecheck quality ci-smoke test-db-up test-db-down test-integration clean
 
 help:
 	@echo "Common commands:"
 	@echo "  make venv       Create/update repo-local virtualenv"
 	@echo "  make test       Run compile + pytest using repo-local virtualenv"
+	@echo "  make lint       Run ruff lint checks"
+	@echo "  make typecheck  Run mypy type checks"
+	@echo "  make quality    Run lint + typecheck"
 	@echo "  make ci-smoke   Run the same smoke checks as CI with unittest"
 	@echo "  make test-integration  Run isolated Docker/Postgres integration tests"
 	@echo "  make clean      Remove local caches"
@@ -30,6 +33,14 @@ test-unit: venv
 	$(VENV_PYTHON) -m pytest -q tests/test_*.py
 
 test: compile test-unit
+
+lint: venv
+	$(VENV_PYTHON) -m ruff check scripts tests
+
+typecheck: venv
+	$(VENV_PYTHON) -m mypy scripts
+
+quality: lint typecheck
 
 ci-smoke: venv
 	$(VENV_PYTHON) -m py_compile scripts/*.py

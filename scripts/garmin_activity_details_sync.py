@@ -10,16 +10,15 @@ Decision log (why this script is designed this way)
 - Decision: Use per-activity SAVEPOINT rollback.
   Why: One bad activity should not abort the entire transaction/run.
 """
-import os
 import json
+import os
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from common_env import load_env
-from datetime import datetime, timezone, date, timedelta
-
 import psycopg2
-from psycopg2.extras import Json
+from common_env import load_env
 from garminconnect import Garmin
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -36,10 +35,10 @@ def parse_ts(s):
             dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
         else:
             dt = datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except Exception:
         return None
 

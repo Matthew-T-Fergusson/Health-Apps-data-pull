@@ -10,17 +10,15 @@ Decision log (why this script is designed this way)
 - Decision: Exit non-zero only on fail.
   Why: Alerts should trigger on actionable breakage, not noisy warnings.
 """
-import os
 import json
+import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from common_env import load_env
-from datetime import datetime, timezone, timedelta
-
 import psycopg2
-from psycopg2.extras import Json
-
+from common_env import load_env
 from health_metrics import emit_metric, warn_metrics_failure
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -86,7 +84,7 @@ def main():
     conn.autocommit = False
     cur = conn.cursor()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     warn_cut = now - timedelta(hours=warn_hours)
     fail_cut = now - timedelta(hours=fail_hours)
 

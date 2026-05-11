@@ -1,0 +1,33 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [
+  ".venv",
+  "output",
+  "receipts",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = [
+  # Keep adoption pragmatic for existing scripts; tighten later as files are touched.
+  "E501",
+  # Existing readiness closure pattern is safe enough; revisit when refactoring that script.
+  "B023",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "E402"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_configs = true
+no_strict_optional = true
+check_untyped_defs = false
+allow_redefinition = true
+exclude = [
+  "^output/",
+  "^receipts/",
+]

@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import json
+import os
 import time
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-
-from common_env import load_env
-from datetime import date, timedelta, datetime, timezone
 from typing import Any
 
 import psycopg2
-from psycopg2.extras import Json
+from common_env import load_env
 from garminconnect import Garmin
-
 from health_metrics import emit_metric, warn_metrics_failure
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -261,7 +259,7 @@ def log_daily_metric_conflicts(cur, job_id, metric_date: str, incoming: dict) ->
     if not row:
         return 0
     conflicts = 0
-    existing = dict(zip(DAILY_METRIC_FIELDS, row))
+    existing = dict(zip(DAILY_METRIC_FIELDS, row, strict=True))
     for field in DAILY_METRIC_FIELDS:
         old = existing.get(field)
         new = incoming.get(field)
@@ -282,7 +280,7 @@ def log_daily_metric_conflicts(cur, job_id, metric_date: str, incoming: dict) ->
 def dt_from_ms(ms):
     if not ms:
         return None
-    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(ms / 1000, tz=UTC)
 
 
 def _to_float(v: Any):
@@ -383,7 +381,7 @@ def _find_daily_record(v: Any, target_date: str):
 def _graphql_scalar(g: Garmin, query: str, key: str):
     try:
         payload = g.query_garmin_graphql({"query": query}) or {}
-        return _jsonish(((payload.get("data") or {}).get(key)))
+        return _jsonish((payload.get("data") or {}).get(key))
     except Exception:
         return None
 
@@ -396,7 +394,7 @@ def _graphql_daily_fallbacks(g: Garmin, d: str):
     time and by account. We keep the raw payloads and only extract fields when a
     date-specific record is present.
     """
-    out = {"summary": {}, "hrv": {}, "sleep": {}, "stress": {}}
+    out: dict[str, Any] = {"summary": {}, "hrv": {}, "sleep": {}, "stress": {}}
 
     summary = _graphql_scalar(
         g,
@@ -710,7 +708,6 @@ def main():
             gql_summary = gql_fallbacks.get("summary") if isinstance(gql_fallbacks, dict) else {}
             gql_hrv = gql_fallbacks.get("hrv") if isinstance(gql_fallbacks, dict) else {}
             gql_sleep = gql_fallbacks.get("sleep") if isinstance(gql_fallbacks, dict) else {}
-            gql_stress = gql_fallbacks.get("stress") if isinstance(gql_fallbacks, dict) else {}
 
             stress_avg = _first_num(stats, ["averageStressLevel", "avgStressLevel"])
             if stress_avg is None:
@@ -1099,7 +1096,7 @@ def main():
                 (backfill_job_id,),
             )
             row = cur.fetchone() or (0, 0, 0)
-            for name, value in zip(["backfill_dates_succeeded", "backfill_dates_empty", "backfill_dates_failed"], row):
+            for name, value in zip(["backfill_dates_succeeded", "backfill_dates_empty", "backfill_dates_failed"], row, strict=True):
                 emit_metric(
                     cur,
                     name,

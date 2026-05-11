@@ -18,24 +18,21 @@ import os
 import subprocess
 import sys
 import uuid
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, timezone
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from common_env import load_env
-from typing import Optional
-
-from garminconnect import Garmin
 import psycopg2
-
+from common_env import load_env
+from garminconnect import Garmin
 from health_metrics import emit_metric, warn_metrics_failure
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-def _iso(dt: Optional[datetime] = None) -> str:
+def _iso(dt: datetime | None = None) -> str:
     return (dt or _utc_now()).isoformat()
 
 
@@ -217,11 +214,12 @@ def main() -> int:
     ended_at = _iso()
     has_fail = any(s.status == 'FAIL' for s in steps)
 
+    run_status = 'fail' if has_fail else 'ok'
     artifact = {
         'run_id': run_id,
         'started_at': started_at,
         'ended_at': ended_at,
-        'status': 'fail' if has_fail else 'ok',
+        'status': run_status,
         'auth': {'tokenstore': str(tokenstore_dir), 'auth_429_count': auth_429_count},
         'cooldown_state': lockout,
         'steps': [asdict(s) for s in steps],
@@ -237,16 +235,16 @@ def main() -> int:
     try:
         with _db_connect() as conn, conn.cursor() as cur:
             run_duration = _seconds_between(started_at, ended_at)
-            emit_metric(cur, 'run_duration_seconds', source='orchestrator', metric_value=run_duration, run_id=run_id, status=artifact['status'])
-            emit_metric(cur, 'run_status', source='orchestrator', metric_text=artifact['status'], run_id=run_id, status=artifact['status'])
-            emit_metric(cur, 'garmin_auth_429_count', source='orchestrator', metric_value=auth_429_count, run_id=run_id, status=artifact['status'])
+            emit_metric(cur, 'run_duration_seconds', source='orchestrator', metric_value=run_duration, run_id=run_id, status=run_status)
+            emit_metric(cur, 'run_status', source='orchestrator', metric_text=run_status, run_id=run_id, status=run_status)
+            emit_metric(cur, 'garmin_auth_429_count', source='orchestrator', metric_value=auth_429_count, run_id=run_id, status=run_status)
             emit_metric(
                 cur,
                 'garmin_lockout_active',
                 source='orchestrator',
                 metric_value=1 if lockout_active(lockout) else 0,
                 run_id=run_id,
-                status=artifact['status'],
+                status=run_status,
                 meta={'cooldown_state': lockout},
             )
             for step in steps:

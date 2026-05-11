@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import json
 import os
-
-from common_env import load_env
 import sys
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 
-import requests
 import psycopg2
+import requests
+from common_env import load_env
 from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
@@ -74,7 +73,7 @@ def parse_dt(dt_s: str):
 def upsert_env_values(path: str, updates: dict[str, str | int]):
     if not os.path.exists(path):
         return
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         lines = f.readlines()
 
     found = {k: False for k in updates.keys()}
@@ -211,7 +210,7 @@ def main():
                     {
                         "activities_fetched": len(acts),
                         "token_expires_at": expires_at,
-                        "run_utc": datetime.now(timezone.utc).isoformat(),
+                        "run_utc": datetime.now(UTC).isoformat(),
                     }
                 ),
             ),
@@ -235,7 +234,7 @@ def main():
             "env_updated": ["STRAVA_REFRESH_TOKEN", "STRAVA_TOKEN_EXPIRES_AT"],
         }, indent=2))
 
-    except Exception as e:
+    except Exception:
         conn.rollback()
         raise
     finally:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 from pathlib import Path
+
 import psycopg2
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]

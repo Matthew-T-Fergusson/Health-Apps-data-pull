@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
+from datetime import UTC, datetime
 from pathlib import Path
 
-from common_env import load_env
-from datetime import datetime, timezone
-
 import psycopg2
-from psycopg2.extras import Json
+from common_env import load_env
 from garminconnect import Garmin
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -23,8 +22,8 @@ def parse_iso_utc(s):
     try:
         dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except Exception:
         return None
 

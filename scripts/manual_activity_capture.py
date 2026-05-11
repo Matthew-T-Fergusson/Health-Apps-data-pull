@@ -11,14 +11,12 @@ import argparse
 import json
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from common_env import load_env
-
 import psycopg2
+from common_env import load_env
 from psycopg2.extras import Json
-
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -37,8 +35,8 @@ LINK_MATCH_METHOD = "time_window_duration_type"
 def parse_dt(s: str) -> datetime:
     dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def normalize_type(t: str) -> str:
@@ -157,7 +155,7 @@ def main():
         "manual": True,
         "capture_source": args.capture_source,
         "notes": args.notes,
-        "entered_at_utc": datetime.now(timezone.utc).isoformat(),
+        "entered_at_utc": datetime.now(UTC).isoformat(),
     }
 
     cur.execute(

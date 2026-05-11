@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,7 +43,7 @@ class RouteAndManualHelperTests(unittest.TestCase):
             cur,
             source="garmin",
             external_id="manual_treadmill_20260408T150000Z_abcd1234",
-            start_utc=datetime(2026, 4, 8, 15, 0, tzinfo=timezone.utc),
+            start_utc=datetime(2026, 4, 8, 15, 0, tzinfo=UTC),
             activity_type="treadmill_manual",
             route_type="manual_no_route",
             distance_m=3200,
@@ -57,14 +57,14 @@ class RouteAndManualHelperTests(unittest.TestCase):
         cur = FakeCursor(rows=[("garmin", "123", 5400, 1800, "cycling")])
         result = find_best_link(
             cur,
-            start_utc=datetime(2026, 4, 8, 15, 0, tzinfo=timezone.utc),
+            start_utc=datetime(2026, 4, 8, 15, 0, tzinfo=UTC),
             moving_time_s=1800,
             activity_type="treadmill_manual",
         )
         self.assertIsNone(result)
 
     def test_gen_manual_id_is_stable_prefix_and_non_numeric(self):
-        manual_id = gen_manual_id("Treadmill Manual", datetime(2026, 4, 8, 15, 0, tzinfo=timezone.utc))
+        manual_id = gen_manual_id("Treadmill Manual", datetime(2026, 4, 8, 15, 0, tzinfo=UTC))
         self.assertTrue(manual_id.startswith("manual_treadmill_manual_20260408T150000Z_"))
         self.assertFalse(manual_id.isdigit())
 

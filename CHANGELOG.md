@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Consent/source-lineage framework with `CONSENT.md`, additive consent metadata, and `health.data_lineage` view.
 - Data quarantine schema and RUNBOOK recovery decision narratives for duplicate activities, malformed Apple Health rows, manual/device conflicts, stale source data, and schema changes.
 - Contributor quickstart polish with `CONTRIBUTING.md` and focused GitHub issue templates.
+- Ruff linting and mypy type-checking with local `make quality` targets and CI enforcement.
 - RUNBOOK with setup/run/QA/recovery operations
 - requirements.txt for reproducible environment setup
 - bootstrap helper script (`scripts/bootstrap.sh`)

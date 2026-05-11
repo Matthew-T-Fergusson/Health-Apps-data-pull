@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from common_env import load_env
-from datetime import date, timedelta, datetime, timezone
-
 import psycopg2
-from psycopg2.extras import Json
+from common_env import load_env
 from garminconnect import Garmin
+from psycopg2.extras import Json
 
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
@@ -20,7 +19,7 @@ def parse_ts(s):
         return None
     # e.g. 2026-02-27 13:41:16
     try:
-        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     except Exception:
         return None
 
@@ -117,7 +116,8 @@ def main():
     )
 
     conn.commit()
-    cur.close(); conn.close()
+    cur.close()
+    conn.close()
     print(json.dumps({"ok": True, "pulled": len(activities), "upserted": ok}, indent=2))
 
 

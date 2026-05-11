@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import zipfile
-import xml.etree.ElementTree as ET
-from datetime import datetime
-from collections import defaultdict
-import json
 import argparse
+import json
+import os
 import subprocess
 import tempfile
-import os
+import xml.etree.ElementTree as ET
+import zipfile
+from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 WORKSPACE_DIR = Path(os.getenv("WORKSPACE_DIR", Path(__file__).resolve().parents[1]))
