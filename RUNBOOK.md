@@ -67,6 +67,37 @@ scripts/health_primary_sync_safe.sh
 .venv/bin/python scripts/health_qa_daily.py
 ```
 
+## 6a) Inspect durable metrics
+Key emitters write operational metrics to `health.metrics_log` without making metrics failures block ingestion by default.
+
+Initial emitters:
+- `garmin_primary_ingest_orchestrator.py`: run status/duration, step status/duration, Garmin lockout/429 signals
+- `garmin_daily_sync.py`: dates attempted/ok, critical missing days, errors, backfill success/empty/failed counts
+- `health_qa_daily.py`: QA status, issue count, critical missing days, Garmin source-empty days
+
+Recent pipeline metrics:
+
+```sql
+SELECT observed_at, source, metric_name, metric_value, metric_text, status, tags
+FROM health.metrics_log
+ORDER BY observed_at DESC
+LIMIT 50;
+```
+
+Latest critical completeness signal:
+
+```sql
+SELECT observed_at, metric_value AS critical_missing_days, status, meta
+FROM health.metrics_log
+WHERE source='health_qa_daily' AND metric_name='critical_missing_days'
+ORDER BY observed_at DESC
+LIMIT 10;
+```
+
+Safety behavior:
+- Metrics use one flexible table: `metric_name`, numeric/text value, source, run_id, status, tags, meta.
+- Metrics write failures warn to stderr and do not break ingestion unless `HEALTH_METRICS_STRICT=1`.
+
 ## 7) Garmin daily wellness backfill / outage recovery
 Use first-class backfill mode when Garmin returns empty/placeholder wellness data for completed days, or after an upstream outage.
 

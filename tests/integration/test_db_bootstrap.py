@@ -18,6 +18,7 @@ CORE_TABLES = [
     ("health", "backfill_jobs"),
     ("health", "backfill_job_dates"),
     ("health", "backfill_value_conflicts"),
+    ("health", "metrics_log"),
     ("health", "activity_routes"),
     ("health", "readiness_daily"),
     ("health", "garmin_exercise_sets_raw"),

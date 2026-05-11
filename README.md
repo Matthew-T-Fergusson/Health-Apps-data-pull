@@ -79,6 +79,7 @@ flowchart LR
 - Circuit breaker on Garmin SSO 429
 - Cooldown lockout persistence
 - Structured run artifact output
+- Durable operational metrics in `health.metrics_log`
 - QA still runs when Garmin is lockout-skipped
 - Garmin daily wellness supports explicit `--mode backfill --since YYYY-MM-DD --until YYYY-MM-DD` recovery runs with merge-safe writes, per-date job tracking, and conflict logging.
 

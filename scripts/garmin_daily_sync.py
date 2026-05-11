@@ -13,6 +13,8 @@ import psycopg2
 from psycopg2.extras import Json
 from garminconnect import Garmin
 
+from health_metrics import emit_metric, warn_metrics_failure
+
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 ENRICH_SQL_PATH = os.getenv("HEALTH_GARMIN_ENRICH_SQL", str(WORKSPACE_DIR / "sql" / "health_garmin_enrichment_tables.sql"))
@@ -1074,6 +1076,46 @@ def main():
     )
 
     conn.commit()
+
+    cur.execute("SAVEPOINT metrics_emit")
+    try:
+        run_id = os.getenv("INGEST_RUN_ID") or (str(backfill_job_id) if backfill_job_id else None)
+        source_name = "garmin_daily_backfill" if args.mode == "backfill" else "garmin_daily"
+        metric_tags = {"mode": args.mode}
+        for name, value in [
+            ("days_attempted", days),
+            ("days_ok", ok),
+            ("critical_missing_days", len(critical_missing_dates)),
+            ("errors_count", len(errors)),
+        ]:
+            emit_metric(cur, name, source=source_name, metric_value=value, run_id=run_id, status=result_status, tags=metric_tags)
+        if backfill_job_id:
+            cur.execute(
+                """
+                SELECT dates_succeeded, dates_empty, dates_failed
+                FROM health.backfill_jobs
+                WHERE job_id=%s
+                """,
+                (backfill_job_id,),
+            )
+            row = cur.fetchone() or (0, 0, 0)
+            for name, value in zip(["backfill_dates_succeeded", "backfill_dates_empty", "backfill_dates_failed"], row):
+                emit_metric(
+                    cur,
+                    name,
+                    source=source_name,
+                    metric_value=value,
+                    run_id=run_id,
+                    status=result_status,
+                    tags={**metric_tags, "backfill_job_id": backfill_job_id},
+                )
+    except Exception as e:
+        cur.execute("ROLLBACK TO SAVEPOINT metrics_emit")
+        warn_metrics_failure("garmin_daily_sync", e)
+    else:
+        cur.execute("RELEASE SAVEPOINT metrics_emit")
+    conn.commit()
+
     cur.close()
     conn.close()
 

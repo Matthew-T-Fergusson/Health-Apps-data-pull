@@ -34,6 +34,7 @@ REQUIRED_TABLES = [
     ("health", "activity_typed_splits_garmin"),
     ("health", "garmin_exercise_sets_raw"),
     ("health", "lifting_set_facts"),
+    ("health", "metrics_log"),
 ]
 
 BOOTSTRAP_SQL_FILES = [

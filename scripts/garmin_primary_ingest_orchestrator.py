@@ -26,6 +26,9 @@ from common_env import load_env
 from typing import Optional
 
 from garminconnect import Garmin
+import psycopg2
+
+from health_metrics import emit_metric, warn_metrics_failure
 
 
 def _utc_now() -> datetime:
@@ -45,6 +48,23 @@ def _is_rl(msg: str) -> bool:
 def _summary(stderr: str) -> str:
     rows = [r.strip() for r in (stderr or '').splitlines() if r.strip()]
     return (rows[-1] if rows else 'none emitted')[:500]
+
+
+def _seconds_between(start_iso: str, end_iso: str) -> float | None:
+    try:
+        return (datetime.fromisoformat(end_iso) - datetime.fromisoformat(start_iso)).total_seconds()
+    except Exception:
+        return None
+
+
+def _db_connect():
+    return psycopg2.connect(
+        host=os.getenv('PGHOST', '127.0.0.1'),
+        port=os.getenv('PGPORT', '5432'),
+        dbname=os.getenv('PGDATABASE', 'health_ops'),
+        user=os.getenv('PGUSER', 'lex'),
+        password=os.getenv('PGPASSWORD') or os.getenv('POSTGRES_PASSWORD'),
+    )
 
 
 @dataclass
@@ -214,6 +234,45 @@ def main() -> int:
         'steps': [{'name': s.name, 'status': s.status, 'exit': s.exit, 'stderr_summary': s.stderr_summary} for s in steps],
     }
     compat_artifact_path.write_text(json.dumps(compat, indent=2))
+    try:
+        with _db_connect() as conn, conn.cursor() as cur:
+            run_duration = _seconds_between(started_at, ended_at)
+            emit_metric(cur, 'run_duration_seconds', source='orchestrator', metric_value=run_duration, run_id=run_id, status=artifact['status'])
+            emit_metric(cur, 'run_status', source='orchestrator', metric_text=artifact['status'], run_id=run_id, status=artifact['status'])
+            emit_metric(cur, 'garmin_auth_429_count', source='orchestrator', metric_value=auth_429_count, run_id=run_id, status=artifact['status'])
+            emit_metric(
+                cur,
+                'garmin_lockout_active',
+                source='orchestrator',
+                metric_value=1 if lockout_active(lockout) else 0,
+                run_id=run_id,
+                status=artifact['status'],
+                meta={'cooldown_state': lockout},
+            )
+            for step in steps:
+                emit_metric(
+                    cur,
+                    'step_status',
+                    source='orchestrator',
+                    metric_text=step.status,
+                    run_id=run_id,
+                    status=step.status.lower(),
+                    tags={'step': step.name, 'exit': step.exit},
+                    meta={'stderr_summary': step.stderr_summary},
+                )
+                duration = _seconds_between(step.started_at, step.ended_at)
+                emit_metric(
+                    cur,
+                    'step_duration_seconds',
+                    source='orchestrator',
+                    metric_value=duration,
+                    run_id=run_id,
+                    status=step.status.lower(),
+                    tags={'step': step.name, 'exit': step.exit},
+                )
+            conn.commit()
+    except Exception as e:
+        warn_metrics_failure('garmin_primary_ingest_orchestrator', e)
     return 1 if has_fail else 0
 
 

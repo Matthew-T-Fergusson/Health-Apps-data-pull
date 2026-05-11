@@ -134,6 +134,27 @@ CREATE INDEX IF NOT EXISTS idx_backfill_jobs_source_started ON health.backfill_j
 CREATE INDEX IF NOT EXISTS idx_backfill_job_dates_status ON health.backfill_job_dates(job_id, status);
 CREATE INDEX IF NOT EXISTS idx_backfill_conflicts_job_date ON health.backfill_value_conflicts(job_id, metric_date);
 
+-- Durable operational metrics for pipeline/dashboard/AI workflow observability.
+-- This is intentionally flexible: emitters can add new metric names/tags
+-- without requiring a schema migration for every operational signal.
+CREATE TABLE IF NOT EXISTS health.metrics_log (
+  id BIGSERIAL PRIMARY KEY,
+  metric_name TEXT NOT NULL,
+  metric_value DOUBLE PRECISION,
+  metric_text TEXT,
+  source TEXT NOT NULL,
+  run_id TEXT,
+  status TEXT,
+  tags JSONB DEFAULT '{}'::jsonb,
+  meta JSONB DEFAULT '{}'::jsonb,
+  observed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_metrics_log_observed ON health.metrics_log(observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_log_source_name ON health.metrics_log(source, metric_name, observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_log_run_id ON health.metrics_log(run_id);
+
 -- Raw source tables
 CREATE TABLE IF NOT EXISTS health.activities_strava_raw (
   id BIGSERIAL PRIMARY KEY,

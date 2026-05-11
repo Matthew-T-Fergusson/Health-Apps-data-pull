@@ -20,6 +20,8 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import Json
 
+from health_metrics import emit_metric, warn_metrics_failure
+
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 ENV_PATH = os.getenv("ENV_PATH", str(WORKSPACE_DIR / ".env"))
 
@@ -287,6 +289,34 @@ def main():
         """,
         (now.isoformat(), qa_status, Json(payload)),
     )
+
+    cur.execute("SAVEPOINT metrics_emit")
+    try:
+        run_id = os.getenv("INGEST_RUN_ID")
+        emit_metric(cur, "qa_status", source="health_qa_daily", metric_text=qa_status, run_id=run_id, status=qa_status)
+        emit_metric(cur, "qa_issue_count", source="health_qa_daily", metric_value=len(issues), run_id=run_id, status=qa_status)
+        emit_metric(
+            cur,
+            "critical_missing_days",
+            source="health_qa_daily",
+            metric_value=critical.get("all_critical_missing_days", 0),
+            run_id=run_id,
+            status=qa_status,
+            meta={"critical_completeness": critical},
+        )
+        emit_metric(
+            cur,
+            "garmin_source_empty_days_30d",
+            source="health_qa_daily",
+            metric_value=nulls.get("garmin_source_empty_days_30d", 0),
+            run_id=run_id,
+            status=qa_status,
+        )
+    except Exception as e:
+        cur.execute("ROLLBACK TO SAVEPOINT metrics_emit")
+        warn_metrics_failure("health_qa_daily", e)
+    else:
+        cur.execute("RELEASE SAVEPOINT metrics_emit")
 
     conn.commit()
     cur.close()
