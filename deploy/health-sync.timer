@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Health Apps Data Pull daily
+Description=Run Personal Health Data Platform daily
 
 [Timer]
 # Daily at 7:00 AM local server time.

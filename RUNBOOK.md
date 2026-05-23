@@ -1,6 +1,6 @@
 # RUNBOOK
 
-Operational guide for **Health Apps Data Pull** (Garmin + Strava).
+Operational guide for the **Personal Health Data Platform** (Garmin, Strava, Apple Health, manual activity, and manual nutrition).
 
 ## 1) Prerequisites
 - Python 3.11+

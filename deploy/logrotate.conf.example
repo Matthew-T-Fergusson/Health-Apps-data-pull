@@ -1,4 +1,4 @@
-# Health Apps Data Pull - logrotate example
+# Personal Health Data Platform - logrotate example
 #
 # Friend/default repo-local log path. Copy/adapt to /etc/logrotate.d/health-sync if desired.
 # This rotates scheduler logs weekly and keeps eight weeks.

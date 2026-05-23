@@ -1,4 +1,4 @@
-# Health Apps Data Pull - cron examples
+# Personal Health Data Platform - cron examples
 #
 # Assumptions:
 # - Repo is checked out at /opt/health-apps-data-pull

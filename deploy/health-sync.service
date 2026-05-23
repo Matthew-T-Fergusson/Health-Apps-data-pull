@@ -1,5 +1,5 @@
 [Unit]
-Description=Health Apps Data Pull one-shot sync
+Description=Personal Health Data Platform one-shot sync
 Documentation=https://github.com/Matthew-T-Fergusson/Health-Apps-data-pull
 Wants=network-online.target
 After=network-online.target postgresql.service docker.service
