@@ -2,17 +2,17 @@
 
 This repository documents a personal health-data platform for owning, normalizing, quality-checking, and analyzing workout, activity, wellness, and nutrition data across Garmin, Strava, Apple Health exports, manual activity capture, and manual nutrition capture.
 
-The project began from a personal data-ownership need: consolidate fragmented health and fitness records into a private Postgres-backed data layer that can support longitudinal analysis and make curated data available to an AI agent for monitoring, summaries, and deeper review.
+The project began as a way to take control of my own health and workout data and make it available to an AI agent for longitudinal analysis. Instead of relying only on fragmented vendor dashboards, this system creates a private Postgres-backed data layer with raw ingestion, curated tables, QA checks, recovery/backfill workflows, source lineage, and consent metadata.
 
-It is under active development. The current system is best understood as an evolving personal data platform, not a finished consumer health app, clinical tool, or diagnostic product.
+The system is still under active development. It currently provides core ingestion and reliability controls for a real personal pipeline, while the roadmap expands toward dashboards, trend analysis, agent-assisted summaries, and operational workflows for monitoring data freshness and source failures.
 
-**Repository short description:** Personal health-data platform for owning, normalizing, QA-checking, and analyzing Garmin, Strava, Apple Health, workout, and nutrition data in a private Postgres database.
+**Repository short description:** A private, Postgres-backed personal health-data platform that consolidates fragmented workout, wellness, activity, and nutrition data into an AI-accessible analytics layer.
 
 ## Why This Matters
 
 Health, workout, activity, recovery, and nutrition data is usually scattered across vendor apps and exports. Each source has different schemas, missing-data behavior, API limits, export formats, and reliability issues.
 
-This project turns that fragmented vendor data into a private, queryable source of truth with:
+This project turns fragmented vendor data into a private, queryable source of truth with:
 
 - personal data ownership instead of app-by-app lock-in
 - raw + curated storage so original source records are preserved while normalized tables support analysis
@@ -25,7 +25,7 @@ The goal is not to provide medical advice. The goal is to make personal health a
 
 ## Current Operating Status
 
-This is a real personal data pipeline feeding a private Postgres-backed data layer.
+This is a real personal data pipeline feeding a private Postgres-backed data layer. The public repository is sanitized and portfolio-safe; it documents the architecture, reliability patterns, and development path without exposing private personal health data.
 
 Current capabilities include:
 
@@ -253,9 +253,9 @@ Reason: it reflects the current positioning as a personal health-data platform r
 Other reasonable options:
 
 - `health-data-platform`
-- `personal-health-data-ops`
-- `agent-accessible-health-data`
-- `health-data-postgres`
+- `ai-ready-health-data-pipeline`
+- `personal-health-analytics-pipeline`
+- `health-data-ops-platform`
 
 ## Before / After Positioning
 
@@ -265,4 +265,4 @@ Before:
 
 After:
 
-> A personal health-data platform for owning, normalizing, quality-checking, and analyzing fragmented workout, activity, wellness, and nutrition data in a private Postgres-backed data layer, with a roadmap toward dashboards and AI-assisted longitudinal analysis.
+> A private, Postgres-backed personal health-data platform that consolidates fragmented workout, wellness, activity, and nutrition data into an AI-accessible analytics layer, with a roadmap toward dashboards, trend analysis, agent-assisted summaries, and operational monitoring.
