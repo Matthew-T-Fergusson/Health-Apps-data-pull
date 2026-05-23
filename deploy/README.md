@@ -13,7 +13,7 @@ For friend handoff, the recommended path is:
 
 Use systemd for a machine that will run this long-term. It is more explicit than cron, easier to inspect, and gives you service/timer status commands.
 
-Example install, assuming the repo lives at `/opt/health-apps-data-pull` and a `healthsync` user owns it:
+Example install, assuming the repo lives at `/opt/personal-health-data-platform` and a `healthsync` user owns it:
 
 ```bash
 sudo cp deploy/health-sync.service /etc/systemd/system/health-sync.service
@@ -75,15 +75,15 @@ Default schedule:
 One-off run after a workout:
 
 ```bash
-cd /opt/health-apps-data-pull
-ENV_PATH=/opt/health-apps-data-pull/.env ./scripts/health_primary_sync_safe.sh
+cd /opt/personal-health-data-platform
+ENV_PATH=/opt/personal-health-data-platform/.env ./scripts/health_primary_sync_safe.sh
 ```
 
 If you are still in Garmin-only first-run mode, use the orchestrator directly without `--with-strava`:
 
 ```bash
-cd /opt/health-apps-data-pull
-ENV_PATH=/opt/health-apps-data-pull/.env ./.venv/bin/python scripts/garmin_primary_ingest_orchestrator.py --workspace "$PWD" --env-file "$PWD/.env"
+cd /opt/personal-health-data-platform
+ENV_PATH=/opt/personal-health-data-platform/.env ./.venv/bin/python scripts/garmin_primary_ingest_orchestrator.py --workspace "$PWD" --env-file "$PWD/.env"
 ```
 
 ## File layout choices
@@ -94,7 +94,7 @@ The environment file stores machine-specific secrets and settings: database cred
 
 | Layout | Example | Pros | Cons |
 | --- | --- | --- | --- |
-| Repo-local `.env` | `/opt/health-apps-data-pull/.env` | Simplest; no `sudo`; matches the default loader; easiest for first-run debugging. | You must avoid committing/sharing `.env`; less clean for a hardened server service. |
+| Repo-local `.env` | `/opt/personal-health-data-platform/.env` | Simplest; no `sudo`; matches the default loader; easiest for first-run debugging. | You must avoid committing/sharing `.env`; less clean for a hardened server service. |
 | System env file | `/etc/health-sync/health-sync.env` | Production-style; secrets live outside the code checkout; works naturally with systemd `EnvironmentFile=`. | Requires `sudo`; more permissions/setup complexity; slightly harder to troubleshoot. |
 
 Friend/default recommendation: start with repo-local `.env`. Move to `/etc/health-sync/health-sync.env` only when hardening the install.
@@ -105,7 +105,7 @@ Artifacts are the evidence files the pipeline writes after a run: latest orchest
 
 | Layout | Example | Pros | Cons |
 | --- | --- | --- | --- |
-| Repo-local output/logs | `/opt/health-apps-data-pull/output/`, `/opt/health-apps-data-pull/logs/` | Easiest to inspect; no permissions surprises; current repo defaults already use it; best for handoff. | Repo folder gets operational state mixed with code; backups/deploys need care. |
+| Repo-local output/logs | `/opt/personal-health-data-platform/output/`, `/opt/personal-health-data-platform/logs/` | Easiest to inspect; no permissions surprises; current repo defaults already use it; best for handoff. | Repo folder gets operational state mixed with code; backups/deploys need care. |
 | System paths | `/var/lib/health-sync/`, `/var/log/health-sync/` | Traditional Linux service layout; separates code, state, and logs; cleaner for long-running servers. | Requires ownership/permission setup; paths must be wired into env and service files carefully. |
 
 Friend/default recommendation: keep `output/` and `logs/` repo-local. For a hardened server, move state to `/var/lib/health-sync` and logs to `/var/log/health-sync` after the first successful setup.

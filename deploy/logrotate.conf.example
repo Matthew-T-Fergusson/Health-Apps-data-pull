@@ -3,7 +3,7 @@
 # Friend/default repo-local log path. Copy/adapt to /etc/logrotate.d/health-sync if desired.
 # This rotates scheduler logs weekly and keeps eight weeks.
 
-/opt/health-apps-data-pull/logs/*.log {
+/opt/personal-health-data-platform/logs/*.log {
     weekly
     rotate 8
     missingok

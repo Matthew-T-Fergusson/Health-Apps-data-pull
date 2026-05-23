@@ -25,8 +25,8 @@ Recommended:
 ## Step 0: Clone and create the Python environment
 
 ```bash
-git clone https://github.com/Matthew-T-Fergusson/Health-Apps-data-pull.git
-cd Health-Apps-data-pull
+git clone https://github.com/Matthew-T-Fergusson/personal-health-data-platform.git
+cd personal-health-data-platform
 make venv
 cp .env.example .env
 ```
@@ -75,7 +75,7 @@ Then set these in `.env`:
 
 ```dotenv
 APP_ENV=production
-WORKSPACE_DIR=/absolute/path/to/Health-Apps-data-pull
+WORKSPACE_DIR=/absolute/path/to/personal-health-data-platform
 PGHOST=127.0.0.1
 PGPORT=5432
 PGDATABASE=health_ops

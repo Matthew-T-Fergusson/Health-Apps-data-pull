@@ -1,7 +1,7 @@
 # Personal Health Data Platform - cron examples
 #
 # Assumptions:
-# - Repo is checked out at /opt/health-apps-data-pull
+# - Repo is checked out at /opt/personal-health-data-platform
 # - Repo-local .env is used for the friend/default setup
 # - Daily sync is sufficient for normal use
 # - For one-off post-workout runs, execute scripts/health_primary_sync_safe.sh manually
@@ -15,7 +15,7 @@ SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
 
 # Daily full sync at 7:00 AM local server time.
-0 7 * * * cd /opt/health-apps-data-pull && ENV_PATH=/opt/health-apps-data-pull/.env ./scripts/health_primary_sync_safe.sh >> /opt/health-apps-data-pull/logs/health-sync-cron.log 2>&1
+0 7 * * * cd /opt/personal-health-data-platform && ENV_PATH=/opt/personal-health-data-platform/.env ./scripts/health_primary_sync_safe.sh >> /opt/personal-health-data-platform/logs/health-sync-cron.log 2>&1
 
 # Daily QA-only check at 7:30 AM local server time.
-30 7 * * * cd /opt/health-apps-data-pull && ENV_PATH=/opt/health-apps-data-pull/.env ./.venv/bin/python scripts/health_qa_daily.py >> /opt/health-apps-data-pull/logs/health-qa-cron.log 2>&1
+30 7 * * * cd /opt/personal-health-data-platform && ENV_PATH=/opt/personal-health-data-platform/.env ./.venv/bin/python scripts/health_qa_daily.py >> /opt/personal-health-data-platform/logs/health-qa-cron.log 2>&1
