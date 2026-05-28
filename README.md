@@ -1,12 +1,14 @@
 # Personal Health Data Platform
 
-This repository documents a personal health-data platform for owning, normalizing, quality-checking, and analyzing workout, activity, wellness, and nutrition data across Garmin, Strava, Apple Health exports, manual activity capture, and manual nutrition capture.
+**Repository short description:** A private, Postgres-backed personal health-data platform that consolidates fragmented workout, wellness, activity, and nutrition data into a reliable, AI-accessible analytics layer.
+
+This repository is a public, sanitized proof point for the same operating-system pattern used in my business operations work: fragmented real-world data is normalized into a structured source of truth, protected by QA gates, lineage, recovery workflows, and clear boundaries around how AI should be used.
 
 The project began as a way to take control of my own health and workout data and make it available to an AI agent for longitudinal analysis. Instead of relying only on fragmented vendor dashboards, this system creates a private Postgres-backed data layer with raw ingestion, curated tables, QA checks, recovery/backfill workflows, source lineage, and consent metadata.
 
 The system is still under active development. It currently provides core ingestion and reliability controls for a real personal pipeline, while the roadmap expands toward dashboards, trend analysis, agent-assisted summaries, and operational workflows for monitoring data freshness and source failures.
 
-**Repository short description:** A private, Postgres-backed personal health-data platform that consolidates fragmented workout, wellness, activity, and nutrition data into an AI-accessible analytics layer.
+The professional relevance is reliability under messy data conditions: multiple sources, inconsistent schemas, API limits, source-empty responses, manual fallback capture, privacy constraints, and QA that checks whether user-facing values are actually complete rather than merely whether a job exited successfully.
 
 ## Why This Matters
 
